@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kinetic Theory Demonstrator — Molecular Origin of Pressure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --chalk:      #14201C;
+    --chalk-2:    #1B2921;
+    --paper:      #EDE6D6;
+    --paper-2:    #E1D8C2;
+    --brass:      #B8874A;
+    --brass-lt:   #D8AD70;
+    --verdigris:  #8FB39A;
+    --ink:        #21160F;
+    --vermilion:  #D64933;
+    --font-display: 'Spectral', Georgia, 'Times New Roman', serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0; padding:0;
+    background: var(--chalk);
+    background-image:
+      radial-gradient(ellipse at 20% -10%, rgba(143,179,154,0.06), transparent 55%),
+      radial-gradient(ellipse at 90% 110%, rgba(184,135,74,0.07), transparent 55%);
+    color: var(--paper);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection{ background: var(--brass); color: var(--ink); }
+
+  .page{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 34px 22px 60px;
+  }
+
+  a{ color: var(--brass-lt); }
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom: 1px solid rgba(184,135,74,0.35);
+    padding-bottom: 20px;
+    margin-bottom: 26px;
+  }
+  .eyebrow{
+    margin:0 0 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--verdigris);
+  }
+  .title-row{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(26px, 4vw, 38px);
+    margin: 0;
+    color: var(--paper);
+    letter-spacing: 0.01em;
+  }
+  .subtitle{
+    max-width: 66ch;
+    margin: 12px 0 0;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: rgba(237,230,214,0.72);
+  }
+  .transport{
+    display:flex; gap:10px;
+  }
+  .btn{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, var(--brass-lt), var(--brass));
+    color: var(--ink);
+    border: 1px solid rgba(33,22,15,0.35);
+    border-radius: 3px;
+    padding: 9px 16px;
+    cursor: pointer;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 2px 4px rgba(0,0,0,0.35);
+    transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  .btn:hover{ filter: brightness(1.07); }
+  .btn:active{ transform: translateY(1px); }
+  .btn:focus-visible, input:focus-visible{
+    outline: 2px solid var(--verdigris);
+    outline-offset: 2px;
+  }
+  .btn.secondary{
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid rgba(237,230,214,0.35);
+    box-shadow: none;
+  }
+
+  /* ---------- layout ---------- */
+  main.grid{
+    display:grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .charts-row{
+    grid-column: 1 / -1;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px){
+    main.grid{ grid-template-columns: 1fr; }
+    .charts-row{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- cards ---------- */
+  .card{
+    background: linear-gradient(180deg, var(--paper), var(--paper-2));
+    border-radius: 6px;
+    padding: 16px;
+    border: 1px solid rgba(33,22,15,0.18);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.4);
+    color: var(--ink);
+  }
+
+  .sim-panel{
+    padding: 14px;
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+  }
+  .sim-frame{
+    position:relative;
+    border-radius: 4px;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(143,179,154,0.10), transparent 60%),
+      linear-gradient(180deg, #16221D, #0F1813);
+    border: 6px solid;
+    border-image: linear-gradient(135deg, var(--brass-lt), var(--brass) 40%, #8a6434 70%, var(--brass-lt)) 1;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.55);
+    aspect-ratio: 1 / 1;
+    width: 100%;
+  }
+  #simCanvas{
+    display:block;
+    width: 100%;
+    height: 100%;
+  }
+  .sim-caption{
+    font-size: 12.5px;
+    color: var(--ink);
+    opacity: 0.68;
+    margin: 0 2px;
+    line-height: 1.5;
+  }
+
+  /* ---------- gauge card ---------- */
+  .gauge-card{
+    text-align:center;
+    margin-bottom: 16px;
+  }
+  #gaugeCanvas{
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    display:block;
+    margin: 0 auto;
+  }
+  .plate{
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 13.5px;
+    letter-spacing: 0.04em;
+    color: #5a4222;
+    background: linear-gradient(180deg, #f4e9d2, #e5d2a8);
+    border: 1px solid rgba(90,66,34,0.35);
+    border-radius: 3px;
+    padding: 5px 10px;
+    display: inline-block;
+    margin: 2px 0 12px;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), inset 0 -1px 3px rgba(90,66,34,0.25);
+  }
+  .readout-row{
+    display:flex;
+    gap: 10px;
+  }
+  .readout{
+    flex:1;
+    background: rgba(33,22,15,0.06);
+    border: 1px solid rgba(33,22,15,0.15);
+    border-radius: 4px;
+    padding: 8px 6px;
+  }
+  .readout .label{
+    display:block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 3px;
+  }
+  .readout .value{
+    display:block;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--vermilion);
+  }
+  #pTheory{ color: #3f6b52; }
+
+  /* ---------- controls ---------- */
+  .controls-card h2, .chart-card h2{
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    letter-spacing: 0.01em;
+  }
+  .control{ margin-bottom: 18px; }
+  .control:last-child{ margin-bottom: 4px; }
+  .control label{
+    display:flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .control label .unit-val{
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--vermilion);
+  }
+  .control .hint{
+    display:block;
+    font-weight: 400;
+    font-size: 11px;
+    opacity: 0.6;
+    margin-top: 2px;
+  }
+
+  input[type=range]{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #8a6434, rgba(33,22,15,0.15));
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--brass-lt), var(--brass) 60%, #7a5a30);
+    border: 1px solid rgba(33,22,15,0.4);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    cursor: pointer;
+    margin-top: -6.5px;
+  }
+  input[type=range]::-moz-range-thumb{
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--brass-lt), var(--brass) 60%, #7a5a30);
+    border: 1px solid rgba(33,22,15,0.4);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{ height:4px; border-radius:2px; }
+  input[type=range]::-moz-range-track{ height:4px; border-radius:2px; background: rgba(33,22,15,0.15); }
+
+  /* ---------- chart cards ---------- */
+  .chart-card canvas{
+    width: 100%;
+    height: 170px;
+    display:block;
+    border-radius: 3px;
+  }
+  .chart-caption{
+    font-size: 11.5px;
+    line-height: 1.5;
+    opacity: 0.65;
+    margin: 10px 2px 0;
+  }
+
+  footer{
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(184,135,74,0.25);
+    font-size: 12px;
+    color: rgba(237,230,214,0.55);
+    line-height: 1.6;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn{ transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <p class="eyebrow">Fluid Mechanics · Kinetic Theory Demonstrator</p>
+    <div class="title-row">
+      <h1>The Molecular Origin of Pressure</h1>
+      <div class="transport">
+        <button class="btn" id="playPause">Pause</button>
+        <button class="btn secondary" id="resetBtn">Reset</button>
+      </div>
+    </div>
+    <p class="subtitle">A box of idealized, non-interacting gas molecules, bouncing off the walls. Every strike hands the wall a little momentum — add those impulses up over time and divide by the wall length, and pressure falls straight out. Adjust the molecule count, temperature, and volume below and watch the gauge follow the kinetic theory prediction in real time.</p>
+  </header>
+
+  <main class="grid">
+
+    <section class="card sim-panel">
+      <div class="sim-frame">
+        <canvas id="simCanvas"></canvas>
+      </div>
+      <p class="sim-caption">Each dot is a molecule of unit mass, moving in a straight line until it strikes a wall and reflects elastically. No molecule–molecule collisions — this is the textbook ideal-gas idealization.</p>
+    </section>
+
+    <aside>
+      <div class="card gauge-card">
+        <canvas id="gaugeCanvas" width="260" height="200"></canvas>
+        <div class="plate">P · V = N · k · T</div>
+        <div class="readout-row">
+          <div class="readout">
+            <span class="label">P, measured</span>
+            <span class="value" id="pMeasured">0.000</span>
+          </div>
+          <div class="readout">
+            <span class="label">P, theory</span>
+            <span class="value" id="pTheory">0.000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card controls-card">
+        <h2>Controls</h2>
+        <div class="control">
+          <label for="nSlider">N — molecule count <span class="unit-val" id="nVal">300</span></label>
+          <input type="range" id="nSlider" min="50" max="800" step="10" value="300">
+          <span class="hint">How many molecules are in the box</span>
+        </div>
+        <div class="control">
+          <label for="tSlider">T — temperature <span class="unit-val" id="tVal">1.00</span></label>
+          <input type="range" id="tSlider" min="0.3" max="2.5" step="0.05" value="1.0">
+          <span class="hint">Sets the spread of molecular speeds</span>
+        </div>
+        <div class="control">
+          <label for="lSlider">V — volume (box side) <span class="unit-val" id="lVal">100</span></label>
+          <input type="range" id="lSlider" min="50" max="180" step="2" value="100">
+          <span class="hint">Compress or expand the container</span>
+        </div>
+      </div>
+    </aside>
+
+    <section class="charts-row">
+      <div class="card chart-card">
+        <h2>Speed distribution</h2>
+        <canvas id="histCanvas"></canvas>
+        <p class="chart-caption">Bars: the simulated molecular speeds, binned live. Line: the 2D Maxwell–Boltzmann (Rayleigh) prediction at the current temperature.</p>
+      </div>
+      <div class="card chart-card">
+        <h2>Pressure, live</h2>
+        <canvas id="stripCanvas"></canvas>
+        <p class="chart-caption">Rolling wall-impulse pressure measurement — the mechanical, first-principles readout that the gauge above displays.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    This page is a single, self-contained HTML file — nothing to install, no Python runtime needed. Host it anywhere static files are served (a course website, GitHub Pages, S3) and share the link, or embed it directly in an LMS page with an &lt;iframe&gt;.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------- state ----------------
+  var N = 300, T = 1.0, L = 100;
+  var particles = []; // {x,y,vx,vy}
+  var running = true;
+  var WORLD_SCALE = 3.6; // px per world unit, at fixed canvas size
+  var CANVAS_WORLD = 200; // the world size the canvas is sized to fit (matches L max)
+  var RADIUS_WORLD = 1.4;
+
+  var WINDOW = 60;
+  var impulseBuf = new Float64Array(WINDOW);
+  var impulseIdx = 0;
+  var pMeasured = 0, pTheory = 0;
+  var GAUGE_MAX = 2.4;
+
+  var pHistory = [];
+  var P_HISTORY_LEN = 240;
+
+  // ---------------- helpers ----------------
+  function gaussianRandom(std){
+    var u = 0, v = 0;
+    while(u === 0) u = Math.random();
+    while(v === 0) v = Math.random();
+    var z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    return z * std;
+  }
+
+  function makeParticle(){
+    var r = RADIUS_WORLD;
+    return {
+      x: r + Math.random() * (L - 2 * r),
+      y: r + Math.random() * (L - 2 * r),
+      vx: gaussianRandom(T),
+      vy: gaussianRandom(T)
+    };
+  }
+
+  function initParticles(){
+    particles = [];
+    for(var i = 0; i < N; i++) particles.push(makeParticle());
+    impulseBuf.fill(0);
+    impulseIdx = 0;
+    pHistory = [];
+  }
+
+  function setDPRCanvas(canvas){
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    var w = Math.max(1, Math.round(rect.width));
+    var h = Math.max(1, Math.round(rect.height));
+    if(canvas._w !== w || canvas._h !== h || canvas._dpr !== dpr){
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas._w = w; canvas._h = h; canvas._dpr = dpr;
+      var ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    return { w: canvas._w, h: canvas._h };
+  }
+
+  // ---------------- canvases ----------------
+  var simCanvas = document.getElementById('simCanvas');
+  var simCtx = simCanvas.getContext('2d');
+
+  var gaugeCanvas = document.getElementById('gaugeCanvas');
+  var gaugeCtx = gaugeCanvas.getContext('2d');
+
+  var histCanvas = document.getElementById('histCanvas');
+  var histCtx = histCanvas.getContext('2d');
+
+  var stripCanvas = document.getElementById('stripCanvas');
+  var stripCtx = stripCanvas.getContext('2d');
+
+  // ---------------- physics tick ----------------
+  function physicsTick(){
+    var r = RADIUS_WORLD;
+    var impulseThisTick = 0;
+
+    for(var i = 0; i < particles.length; i++){
+      var p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if(p.x < r){
+        p.x = r;
+        if(p.vx < 0){ impulseThisTick += -2 * p.vx; p.vx = -p.vx; }
+      } else if(p.x > L - r){
+        p.x = L - r;
+        if(p.vx > 0){ impulseThisTick += 2 * p.vx; p.vx = -p.vx; }
+      }
+
+      if(p.y < r){
+        p.y = r;
+        if(p.vy < 0){ impulseThisTick += -2 * p.vy; p.vy = -p.vy; }
+      } else if(p.y > L - r){
+        p.y = L - r;
+        if(p.vy > 0){ impulseThisTick += 2 * p.vy; p.vy = -p.vy; }
+      }
+    }
+
+    impulseBuf[impulseIdx % WINDOW] = impulseThisTick;
+    impulseIdx++;
+
+    var sum = 0;
+    for(var k = 0; k < WINDOW; k++) sum += impulseBuf[k];
+    pMeasured = sum / (4 * L * WINDOW);
+
+    var meanSq = 0;
+    for(var j = 0; j < particles.length; j++){
+      meanSq += particles[j].vx * particles[j].vx + particles[j].vy * particles[j].vy;
+    }
+    meanSq = particles.length > 0 ? meanSq / particles.length : 0;
+    pTheory = (N * meanSq) / (2 * L * L);
+
+    pHistory.push(pMeasured);
+    if(pHistory.length > P_HISTORY_LEN) pHistory.shift();
+  }
+
+  // ---------------- rendering: simulation box ----------------
+  function renderSim(){
+    var size = setDPRCanvas(simCanvas);
+    var w = size.w, h = size.h;
+    simCtx.clearRect(0, 0, w, h);
+
+    var scale = Math.min(w, h) / CANVAS_WORLD;
+    var boxPx = L * scale;
+    var ox = (w - boxPx) / 2;
+    var oy = (h - boxPx) / 2;
+
+    // box interior
+    simCtx.fillStyle = 'rgba(143,179,154,0.045)';
+    simCtx.fillRect(ox, oy, boxPx, boxPx);
+
+    // box walls
+    simCtx.strokeStyle = 'rgba(216,173,112,0.85)';
+    simCtx.lineWidth = 2;
+    simCtx.strokeRect(ox, oy, boxPx, boxPx);
+
+    // particles
+    var rPx = Math.max(1.6, RADIUS_WORLD * scale);
+    simCtx.fillStyle = '#9FCBAE';
+    for(var i = 0; i < particles.length; i++){
+      var p = particles[i];
+      var px = ox + p.x * scale;
+      var py = oy + p.y * scale;
+      simCtx.beginPath();
+      simCtx.arc(px, py, rPx, 0, Math.PI * 2);
+      simCtx.fill();
+    }
+  }
+
+  // ---------------- rendering: gauge ----------------
+  var START_DEG = 135, END_DEG = 405; // 270 degree sweep
+
+  function valueToRad(value){
+    var frac = Math.max(0, Math.min(1, value / GAUGE_MAX));
+    var deg = START_DEG + frac * (END_DEG - START_DEG);
+    return deg * Math.PI / 180;
+  }
+
+  function renderGauge(){
+    var size = setDPRCanvas(gaugeCanvas);
+    var w = size.w, h = size.h;
+    gaugeCtx.clearRect(0, 0, w, h);
+
+    var cx = w / 2, cy = h * 0.62;
+    var R = Math.min(w, h * 1.25) * 0.40;
+
+    // casing
+    var casing = gaugeCtx.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.2, cx, cy, R * 1.25);
+    casing.addColorStop(0, '#f0dcae');
+    casing.addColorStop(0.55, '#c99a54');
+    casing.addColorStop(1, '#7a5a30');
+    gaugeCtx.beginPath();
+    gaugeCtx.arc(cx, cy, R * 1.16, 0, Math.PI * 2);
+    gaugeCtx.fillStyle = casing;
+    gaugeCtx.fill();
+
+    // face
+    gaugeCtx.beginPath();
+    gaugeCtx.arc(cx, cy, R * 1.0, 0, Math.PI * 2);
+    gaugeCtx.fillStyle = '#16221D';
+    gaugeCtx.fill();
+
+    // arc track
+    gaugeCtx.beginPath();
+    gaugeCtx.arc(cx, cy, R * 0.86, START_DEG * Math.PI / 180, END_DEG * Math.PI / 180, false);
+    gaugeCtx.strokeStyle = 'rgba(143,179,154,0.35)';
+    gaugeCtx.lineWidth = 3;
+    gaugeCtx.stroke();
+
+    // colored arc up to current measured pressure
+    gaugeCtx.beginPath();
+    gaugeCtx.arc(cx, cy, R * 0.86, START_DEG * Math.PI / 180, valueToRad(pMeasured), false);
+    gaugeCtx.strokeStyle = '#D64933';
+    gaugeCtx.lineWidth = 3;
+    gaugeCtx.stroke();
+
+    // ticks
+    gaugeCtx.font = '9px IBM Plex Mono, monospace';
+    gaugeCtx.fillStyle = 'rgba(237,230,214,0.85)';
+    gaugeCtx.textAlign = 'center';
+    gaugeCtx.textBaseline = 'middle';
+    var steps = 6;
+    for(var i = 0; i <= steps; i++){
+      var val = (GAUGE_MAX / steps) * i;
+      var rad = valueToRad(val);
+      var x1 = cx + Math.cos(rad) * R * 0.86;
+      var y1 = cy + Math.sin(rad) * R * 0.86;
+      var x2 = cx + Math.cos(rad) * R * 0.76;
+      var y2 = cy + Math.sin(rad) * R * 0.76;
+      gaugeCtx.beginPath();
+      gaugeCtx.moveTo(x1, y1);
+      gaugeCtx.lineTo(x2, y2);
+      gaugeCtx.strokeStyle = 'rgba(237,230,214,0.55)';
+      gaugeCtx.lineWidth = 1.5;
+      gaugeCtx.stroke();
+      var lx = cx + Math.cos(rad) * R * 0.62;
+      var ly = cy + Math.sin(rad) * R * 0.62;
+      gaugeCtx.fillText(val.toFixed(1), lx, ly);
+    }
+
+    // needle
+    var needleRad = valueToRad(pMeasured);
+    var nx = cx + Math.cos(needleRad) * R * 0.72;
+    var ny = cy + Math.sin(needleRad) * R * 0.72;
+    gaugeCtx.beginPath();
+    gaugeCtx.moveTo(cx, cy);
+    gaugeCtx.lineTo(nx, ny);
+    gaugeCtx.strokeStyle = '#D64933';
+    gaugeCtx.lineWidth = 2.4;
+    gaugeCtx.lineCap = 'round';
+    gaugeCtx.stroke();
+
+    gaugeCtx.beginPath();
+    gaugeCtx.arc(cx, cy, R * 0.08, 0, Math.PI * 2);
+    gaugeCtx.fillStyle = '#D8AD70';
+    gaugeCtx.fill();
+
+    // label
+    gaugeCtx.font = '600 10px IBM Plex Mono, monospace';
+    gaugeCtx.fillStyle = 'rgba(237,230,214,0.6)';
+    gaugeCtx.fillText('PRESSURE', cx, cy - R * 0.42);
+  }
+
+  // ---------------- rendering: speed histogram ----------------
+  function renderHist(){
+    var size = setDPRCanvas(histCanvas);
+    var w = size.w, h = size.h;
+    histCtx.clearRect(0, 0, w, h);
+
+    var nBins = 26;
+    var histMax = Math.max(3.5, T * 4.6);
+    var binWidth = histMax / nBins;
+    var counts = new Array(nBins).fill(0);
+
+    for(var i = 0; i < particles.length; i++){
+      var p = particles[i];
+      var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      var b = Math.floor(speed / binWidth);
+      if(b >= 0 && b < nBins) counts[b]++;
+    }
+
+    // theoretical expected counts (2D Maxwell-Boltzmann / Rayleigh)
+    var expected = new Array(nBins);
+    var maxExpected = 0;
+    for(var bi = 0; bi < nBins; bi++){
+      var vMid = (bi + 0.5) * binWidth;
+      var f = (vMid / (T * T)) * Math.exp(-(vMid * vMid) / (2 * T * T));
+      var ec = N * f * binWidth;
+      expected[bi] = ec;
+      if(ec > maxExpected) maxExpected = ec;
+    }
+
+    var maxCount = Math.max(1, Math.max.apply(null, counts), maxExpected);
+    var padL = 4, padR = 4, padT = 10, padB = 16;
+    var plotW = w - padL - padR, plotH = h - padT - padB;
+    var bw = plotW / nBins;
+
+    // bars
+    histCtx.fillStyle = 'rgba(184,135,74,0.55)';
+    for(var bb = 0; bb < nBins; bb++){
+      var bh = (counts[bb] / maxCount) * plotH;
+      histCtx.fillRect(padL + bb * bw + 1, padT + (plotH - bh), bw - 2, bh);
+    }
+
+    // theoretical curve
+    histCtx.beginPath();
+    for(var s = 0; s <= nBins; s++){
+      var v = s * binWidth;
+      var fS = (v / (T * T)) * Math.exp(-(v * v) / (2 * T * T));
+      var ecS = N * fS * binWidth;
+      var xS = padL + s * bw;
+      var yS = padT + (plotH - (ecS / maxCount) * plotH);
+      if(s === 0) histCtx.moveTo(xS, yS); else histCtx.lineTo(xS, yS);
+    }
+    histCtx.strokeStyle = '#D64933';
+    histCtx.lineWidth = 2;
+    histCtx.stroke();
+
+    // baseline
+    histCtx.strokeStyle = 'rgba(33,22,15,0.35)';
+    histCtx.lineWidth = 1;
+    histCtx.beginPath();
+    histCtx.moveTo(padL, padT + plotH + 0.5);
+    histCtx.lineTo(padL + plotW, padT + plotH + 0.5);
+    histCtx.stroke();
+
+    histCtx.fillStyle = 'rgba(33,22,15,0.55)';
+    histCtx.font = '10px IBM Plex Mono, monospace';
+    histCtx.textAlign = 'left';
+    histCtx.fillText('speed \u2192', padL, h - 3);
+  }
+
+  // ---------------- rendering: pressure strip chart ----------------
+  function renderStrip(){
+    var size = setDPRCanvas(stripCanvas);
+    var w = size.w, h = size.h;
+    stripCtx.clearRect(0, 0, w, h);
+
+    var padL = 30, padR = 8, padT = 10, padB = 16;
+    var plotW = w - padL - padR, plotH = h - padT - padB;
+
+    // gridlines + labels
+    stripCtx.strokeStyle = 'rgba(33,22,15,0.12)';
+    stripCtx.fillStyle = 'rgba(33,22,15,0.55)';
+    stripCtx.font = '9px IBM Plex Mono, monospace';
+    stripCtx.textAlign = 'right';
+    stripCtx.textBaseline = 'middle';
+    var gridSteps = 4;
+    for(var i = 0; i <= gridSteps; i++){
+      var val = (GAUGE_MAX / gridSteps) * i;
+      var y = padT + plotH - (val / GAUGE_MAX) * plotH;
+      stripCtx.beginPath();
+      stripCtx.moveTo(padL, y);
+      stripCtx.lineTo(padL + plotW, y);
+      stripCtx.stroke();
+      stripCtx.fillText(val.toFixed(1), padL - 5, y);
+    }
+
+    if(pHistory.length > 1){
+      stripCtx.beginPath();
+      for(var k = 0; k < pHistory.length; k++){
+        var x = padL + (k / (P_HISTORY_LEN - 1)) * plotW;
+        var yv = padT + plotH - Math.min(1, pHistory[k] / GAUGE_MAX) * plotH;
+        if(k === 0) stripCtx.moveTo(x, yv); else stripCtx.lineTo(x, yv);
+      }
+      stripCtx.strokeStyle = '#D64933';
+      stripCtx.lineWidth = 1.8;
+      stripCtx.stroke();
+    }
+
+    stripCtx.fillStyle = 'rgba(33,22,15,0.55)';
+    stripCtx.textAlign = 'left';
+    stripCtx.fillText('time \u2192', padL, h - 3);
+  }
+
+  // ---------------- readouts ----------------
+  var pMeasuredEl = document.getElementById('pMeasured');
+  var pTheoryEl = document.getElementById('pTheory');
+
+  function renderReadouts(){
+    pMeasuredEl.textContent = pMeasured.toFixed(3);
+    pTheoryEl.textContent = pTheory.toFixed(3);
+  }
+
+  // ---------------- main loop ----------------
+  function frame(){
+    if(running){
+      physicsTick();
+      renderSim();
+      renderGauge();
+      renderHist();
+      renderStrip();
+      renderReadouts();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------------- controls wiring ----------------
+  var nSlider = document.getElementById('nSlider');
+  var tSlider = document.getElementById('tSlider');
+  var lSlider = document.getElementById('lSlider');
+  var nVal = document.getElementById('nVal');
+  var tVal = document.getElementById('tVal');
+  var lVal = document.getElementById('lVal');
+
+  nSlider.addEventListener('input', function(){
+    var newN = parseInt(nSlider.value, 10);
+    nVal.textContent = newN;
+    if(newN > particles.length){
+      while(particles.length < newN) particles.push(makeParticle());
+    } else {
+      particles.length = newN;
+    }
+    N = newN;
+  });
+
+  tSlider.addEventListener('input', function(){
+    var newT = parseFloat(tSlider.value);
+    tVal.textContent = newT.toFixed(2);
+    var ratio = newT / T;
+    for(var i = 0; i < particles.length; i++){
+      particles[i].vx *= ratio;
+      particles[i].vy *= ratio;
+    }
+    T = newT;
+  });
+
+  lSlider.addEventListener('input', function(){
+    var newL = parseFloat(lSlider.value);
+    lVal.textContent = newL;
+    var r = RADIUS_WORLD;
+    for(var i = 0; i < particles.length; i++){
+      var p = particles[i];
+      if(p.x < r) p.x = r; else if(p.x > newL - r) p.x = newL - r;
+      if(p.y < r) p.y = r; else if(p.y > newL - r) p.y = newL - r;
+    }
+    L = newL;
+  });
+
+  var playPauseBtn = document.getElementById('playPause');
+  playPauseBtn.addEventListener('click', function(){
+    running = !running;
+    playPauseBtn.textContent = running ? 'Pause' : 'Play';
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    initParticles();
+  });
+
+  window.addEventListener('resize', function(){
+    // canvases self-adjust on next frame via setDPRCanvas
+  });
+
+  // ---------------- boot ----------------
+  initParticles();
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
