@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Debanjan Mukherjee" />
+  <title>Fluid Mechanics Lecture Notes</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Fluid Mechanics Lecture Notes</h1>
+<p class="author">Debanjan Mukherjee</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#fluid-mechanics-mathematical-preliminaries"
+id="toc-fluid-mechanics-mathematical-preliminaries">Fluid Mechanics:
+Mathematical Preliminaries</a>
+<ul>
+<li><a href="#introduction" id="toc-introduction">Introduction</a></li>
+<li><a href="#notation" id="toc-notation">Notation</a></li>
+<li><a href="#vector-operations" id="toc-vector-operations">Vector
+Operations</a></li>
+<li><a href="#examples" id="toc-examples">Examples</a></li>
+<li><a href="#review-of-vector-calculus"
+id="toc-review-of-vector-calculus">Review of Vector Calculus</a></li>
+<li><a href="#examples-1" id="toc-examples-1">Examples</a></li>
+<li><a href="#units-and-dimensions" id="toc-units-and-dimensions">Units
+and Dimensions</a></li>
+<li><a href="#fundamental-and-derived-dimensions"
+id="toc-fundamental-and-derived-dimensions">Fundamental and Derived
+Dimensions</a></li>
+<li><a href="#deriving-dimensions-from-fundamental-equations"
+id="toc-deriving-dimensions-from-fundamental-equations">Deriving
+Dimensions from Fundamental Equations</a></li>
+<li><a href="#dimensions-of-derivatives-and-integrals"
+id="toc-dimensions-of-derivatives-and-integrals">Dimensions of
+Derivatives and Integrals</a></li>
+</ul></li>
+<li><a href="#fluid-mechanics-fundamental-properties-of-fluids"
+id="toc-fluid-mechanics-fundamental-properties-of-fluids">Fluid
+Mechanics: Fundamental Properties of Fluids</a>
+<ul>
+<li><a href="#what-is-a-fluid" id="toc-what-is-a-fluid">What is a
+fluid?</a></li>
+<li><a href="#the-continuum-hypothesis"
+id="toc-the-continuum-hypothesis">The Continuum Hypothesis</a></li>
+<li><a href="#forces-in-a-fluid" id="toc-forces-in-a-fluid">Forces in a
+fluid</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="fluid-mechanics-mathematical-preliminaries">Fluid Mechanics:
+Mathematical Preliminaries</h1>
+<h2 id="introduction">Introduction</h2>
+<p>We will learn about the physics of fluid flow. However, we will need
+a unified language to describe this physics. As is common in
+engineering, we will rely on mathematics as the language for describing
+fluid flows. Specifically, <span class="smallcaps">vectors</span> and
+<span class="smallcaps">vector calculus</span> will comprise the
+building blocks.</p>
+<p>Scalars and vectors are like the ’alphabets’ of the physics
+descriptions. Scalars are quantities that are described using only a
+<span class="smallcaps">Numeric Value</span> describing the <em>how much
+of the quantity is being represented?</em> or the
+<strong>Magnitude</strong> of the quantity. For example: pressure,
+temperature etc. Vectors are quantities that are described using a <span
+class="smallcaps">numeric value</span> <span
+class="smallcaps">and</span> a <span class="smallcaps">direction</span>,
+describing the <strong>Magnitude</strong> of the quantity, <em>along a
+specific direction</em>. For example: velocity, force etc. We will also
+refer to a set of quantities called Tensors, which we will refer to as
+quantities of <em>higher-order</em> than scalars, and vectors - and in
+plain terms, we will mean that they are described using more than one
+index/component-count system (as opposed to 0 indices for scalars, and 1
+index for vectors). The common way to think about Tensors would be,
+tensors of second-order are equivalent to matrices, with 2 indices,
+where the indices indicate row and column positioning.</p>
+<h2 id="notation">Notation</h2>
+<p>Throughout our description, we will write vectors with 1 underline.
+For example: <span
+class="math inline">\(\underbar{$\bm{x}$}\)</span>, <span
+class="math inline">\(\underbar{$\bm{a}$}\)</span>, <span
+class="math inline">\(\underbar{$\bm{n}$}\)</span>, etc. Keeping with
+the notion that an underline indicates the index-count/order of the
+mathematical ’alphabet’ of ours - scalars will have <span
+class="smallcaps">No underline</span>, and matrices will have <span
+class="smallcaps">2 underlines</span>. Also, vectors which have a net
+magnitude of 1 are called <span class="smallcaps">unit vectors</span>
+(represented using a hat or <span
+class="math inline">\(\wedge\)</span>). For example: <span
+class="math inline">\(\hat{\underbar{$\bm{x}$}}\)</span>, <span
+class="math inline">\(\hat{\underbar{$\bm{a}$}}\)</span>, <span
+class="math inline">\(\hat{\underbar{$\bm{n}$}}\)</span>, etc.</p>
+<h3 id="equivalent-notations">Equivalent Notations</h3>
+<p>Commonly, we will write a vector in terms of unit vectors and
+components along the basis coordinate axes (<span
+class="math inline">\(x,y,z\)</span> axes; <span
+class="math inline">\(1,2,3\)</span> axes):</p>
+<figure id="fig:c1-coordinatebasis" data-latex-placement="htbp">
+
+<figcaption>Cartesian coordinate axes <span
+class="math inline">\(x_1\)</span> (<span
+class="math inline">\(x\)</span>), <span
+class="math inline">\(x_2\)</span> (<span
+class="math inline">\(y\)</span>), <span
+class="math inline">\(x_3\)</span> (<span
+class="math inline">\(z\)</span>) shown in isometric
+projection.</figcaption>
+</figure>
+<p><span class="math display">\[\begin{align}
+  \underbar{$\bm{u}$} &amp;= u_1\,\hat{\underbar{$\bm{x}$}}_{1} +
+u_2\,\hat{\underbar{$\bm{x}$}}_{2} + u_3\,\hat{\underbar{$\bm{x}$}}_{3}
+\\[4pt]
+  \underbar{$\bm{u}$} &amp;= u\,\hat{\underbar{$\bm{x}$}}_{1} +
+v\,\hat{\underbar{$\bm{x}$}}_{2} + w\,\hat{\underbar{$\bm{x}$}}_{3}
+\\[4pt]
+  \underbar{$\bm{u}$} &amp;= u\,\hat{\underbar{$\bm{x}$}}+
+v\,\hat{\underbar{$\bm{y}$}}+ w\,\hat{\underbar{$\bm{z}$}}\\[4pt]
+  \underbar{$\bm{u}$} &amp;= u_1\,\hat{\underbar{$\bm{e}$}}_{1} +
+u_2\,\hat{\underbar{$\bm{e}$}}_{2} + u_3\,\hat{\underbar{$\bm{e}$}}_{3}
+\end{align}\]</span></p>
+<p><em>(All of these notations are <span
+class="smallcaps">equivalent</span>!)</em></p>
+<h2 id="vector-operations">Vector Operations</h2>
+<p>With the ’alphabets’ established, we now stitch them together to
+write meaningful mathematical quantities and descriptions. These rely on
+basic <span class="smallcaps">rules</span> or <span
+class="smallcaps">operations</span> for these objects to interplay with
+each other. These are the standard vector algebra operations taught in
+calculus classes, we simply review some of the basic ones here to get us
+up to speed.</p>
+<h3 id="addition-subtraction">Addition / Subtraction</h3>
+<p>Given two vectors:</p>
+<p><span class="math display">\[\begin{align}
+  \underbar{$\bm{u}$} &amp;= u_1\,\hat{\underbar{$\bm{x}$}}_{1} +
+u_2\,\hat{\underbar{$\bm{x}$}}_{2} + u_3\,\hat{\underbar{$\bm{x}$}}_{3}
+\\
+  \underbar{$\bm{v}$} &amp;= v_1\,\hat{\underbar{$\bm{x}$}}_{1} +
+v_2\,\hat{\underbar{$\bm{x}$}}_{2} + v_3\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{align}\]</span></p>
+<p>Addition (as well as subtraction) of these two can be written as:</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$}+\underbar{$\bm{v}$}= (u_1+v_1)
+\hat{\underbar{$\bm{x}$}}_{1} + (u_2+v_2) \hat{\underbar{$\bm{x}$}}_{2}
++ (u_3+v_3) \hat{\underbar{$\bm{x}$}}_{3}
+\end{equation}\]</span></p>
+<h3 id="dot-product">Dot Product</h3>
+<p>Given two vectors:</p>
+<p><span class="math display">\[\begin{align}
+  \underbar{$\bm{u}$} &amp;= u_1\,\hat{\underbar{$\bm{x}$}}_{1} +
+u_2\,\hat{\underbar{$\bm{x}$}}_{2} + u_3\,\hat{\underbar{$\bm{x}$}}_{3}
+\\
+  \underbar{$\bm{v}$} &amp;= v_1\,\hat{\underbar{$\bm{x}$}}_{1} +
+v_2\,\hat{\underbar{$\bm{x}$}}_{2} + v_3\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{align}\]</span></p>
+<p>their <span class="smallcaps">Dot Product</span>, which is a
+<strong>scalar valued product</strong>, is stated as:</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$}\cdot\underbar{$\bm{v}$} = u_1 v_1 + u_2 v_2 + u_3
+v_3
+\end{equation}\]</span></p>
+<p>And:</p>
+<p><span class="math display">\[\begin{equation}
+  \sqrt{\underbar{$\bm{u}$}\cdot\underbar{$\bm{u}$}} = \sqrt{u_1^2 +
+u_2^2 + u_3^2}
+\end{equation}\]</span></p>
+<p>gives us the <em>magnitude</em> of <span
+class="math inline">\(\underbar{$\bm{u}$}\)</span>, or <span
+class="math inline">\(\|\underbar{$\bm{u}$}\|\)</span>.</p>
+<p><strong>Interpretation of dot product:</strong></p>
+<figure id="fig:c1-dotproduct" data-latex-placement="htbp">
+
+<figcaption>Dot product</figcaption>
+</figure>
+<p><span
+class="math inline">\(\underbar{$\bm{u}$}\cdot\underbar{$\bm{v}$}\)</span>
+represents the component of <span
+class="math inline">\(\underbar{$\bm{u}$}\)</span> <span
+class="smallcaps">projected</span> along <span
+class="math inline">\(\underbar{$\bm{v}$}\)</span> (in physics terms,
+think about the amount of force acting along a specific direction).</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$}\cdot\underbar{$\bm{v}$} =
+\|\underbar{$\bm{u}$}\|\,\|\underbar{$\bm{v}$}\|\cos(\theta)
+\end{equation}\]</span></p>
+<h3 id="cross-product">Cross Product</h3>
+<p>Given two vectors:</p>
+<p><span class="math display">\[\begin{align}
+  \underbar{$\bm{u}$} &amp;= u_1\,\hat{\underbar{$\bm{x}$}}_{1} +
+u_2\,\hat{\underbar{$\bm{x}$}}_{2} + u_3\,\hat{\underbar{$\bm{x}$}}_{3}
+\\
+  \underbar{$\bm{v}$} &amp;= v_1\,\hat{\underbar{$\bm{x}$}}_{1} +
+v_2\,\hat{\underbar{$\bm{x}$}}_{2} + v_3\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{align}\]</span></p>
+<p>their <span class="smallcaps">Cross Product</span>, which is a
+<strong>vector valued product</strong>, is stated as:</p>
+<p><span class="math display">\[\begin{align}
+  \underbar{$\bm{u}$}\times\underbar{$\bm{v}$}
+    &amp;= (u_2 v_3 - u_3 v_2)\,\hat{\underbar{$\bm{x}$}}_{1} \nonumber
+\\
+    &amp;+ (u_3 v_1 - u_1 v_3)\,\hat{\underbar{$\bm{x}$}}_{2} \nonumber
+\\
+    &amp;+ (u_1 v_2 - u_2 v_1)\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{align}\]</span></p>
+<p>or using the <span class="smallcaps">determinant notation</span>:</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$}\times\underbar{$\bm{v}$} =
+  \begin{vmatrix}
+    \hat{\underbar{$\bm{x}$}}_{1} &amp; \hat{\underbar{$\bm{x}$}}_{2}
+&amp; \hat{\underbar{$\bm{x}$}}_{3} \\
+    u_1 &amp; u_2 &amp; u_3 \\
+    v_1 &amp; v_2 &amp; v_3
+  \end{vmatrix}
+\end{equation}\]</span></p>
+<p><strong>Interpretation of cross product:</strong></p>
+<figure id="fig:c1-crossproduct" data-latex-placement="htbp">
+
+<figcaption>Cross product.</figcaption>
+</figure>
+<p>The unit vector of the cross-product is normal to both vectors in a
+right-hand rule sense, with its magnitude being equal to area of
+parallelogram formed by the two vectors.</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$}\times\underbar{$\bm{v}$} =
+\|\underbar{$\bm{u}$}\|\,\|\underbar{$\bm{v}$}\|\sin(\theta)\,\hat{\underbar{$\bm{n}$}}
+\end{equation}\]</span></p>
+<h2 id="examples">Examples</h2>
+<div class="tcolorbox">
+<p>Given a vector <span class="math inline">\(\underbar{$\bm{a}$} =
+5\,\hat{\underbar{$\bm{x}$}}_{1} +
+5\,\hat{\underbar{$\bm{x}$}}_{2}\)</span>, find the magnitude of <span
+class="math inline">\(\underbar{$\bm{a}$}\)</span>  (<span
+class="math inline">\(\|\underbar{$\bm{a}$}\|\)</span>).</p>
+<p><strong>Solution:</strong> <span class="math display">\[\begin{align}
+  \|\underbar{$\bm{a}$}\| &amp;=
+\sqrt{\underbar{$\bm{a}$}\cdot\underbar{$\bm{a}$}} \\[4pt]
+  \underbar{$\bm{a}$}\cdot\underbar{$\bm{a}$}
+    &amp;= \underbrace{(5\cdot5)}_{a_1^2}
+     + \underbrace{(5\cdot5)}_{a_2^2}
+     + \underbrace{(0\cdot0)}_{a_3^2} = 50
+\end{align}\]</span></p>
+<p>Hence, <span class="math inline">\(\|\underbar{$\bm{a}$}\| =
+\sqrt{50} = 5\sqrt{2}\)</span>.</p>
+</div>
+<div class="tcolorbox">
+<p>With <span class="math inline">\(\underbar{$\bm{b}$} =
+5\,\hat{\underbar{$\bm{x}$}}_{2} +
+5\,\hat{\underbar{$\bm{x}$}}_{3}\)</span> and <span
+class="math inline">\(\underbar{$\bm{a}$}\)</span> given as above in
+Example 1, find <span
+class="math inline">\(\underbar{$\bm{a}$}\times\underbar{$\bm{b}$}\)</span>.</p>
+<p><strong>Solution:</strong> We will directly use the definition: <span
+class="math display">\[\begin{align}
+  \underbar{$\bm{a}$}\times\underbar{$\bm{b}$}
+    &amp;= (a_2 b_3 - a_3 b_2)\,\hat{\underbar{$\bm{x}$}}_{1} + (a_3 b_1
+- a_1 b_3)\,\hat{\underbar{$\bm{x}$}}_{2} + (a_1 b_2 - a_2
+b_1)\,\hat{\underbar{$\bm{x}$}}_{3} \\[4pt]
+    &amp;= (5\cdot5 - 0\cdot5)\,\hat{\underbar{$\bm{x}$}}_{1} + (0\cdot0
+- 5\cdot5)\,\hat{\underbar{$\bm{x}$}}_{2} + (5\cdot5 -
+5\cdot0)\,\hat{\underbar{$\bm{x}$}}_{3} \\[4pt]
+    &amp;= 25\,\hat{\underbar{$\bm{x}$}}_{1} -
+25\,\hat{\underbar{$\bm{x}$}}_{2} + 25\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{align}\]</span></p>
+<p>The above gives us: <span class="math display">\[\begin{equation}
+  \underbar{$\bm{a}$}\times\underbar{$\bm{b}$} =
+25\,(\hat{\underbar{$\bm{x}$}}_{1} - \hat{\underbar{$\bm{x}$}}_{2} +
+\hat{\underbar{$\bm{x}$}}_{3})
+\end{equation}\]</span></p>
+</div>
+<h2 id="review-of-vector-calculus">Review of Vector Calculus</h2>
+<p>Here we review common vector calculus terms that we will use: <span
+class="smallcaps">gradient</span>, <span
+class="smallcaps">divergence</span>, <span
+class="smallcaps">curl</span>, <span class="smallcaps">laplacian</span>.
+Keeping with the analogy of <em>language to describe physics</em>, we
+will position each of these quantities from the lens of their <span
+class="smallcaps">Physical meaning</span> or interpretation.
+Specifically, we will discuss what each of these operations reflect
+about the underlying physics of flows that we want to describe.</p>
+<h3 id="gradient">Gradient</h3>
+<p>Assume <span class="math inline">\(\phi(\underbar{$\bm{x}$})\)</span>
+is a scalar function describing a fluid flow variable (<em>recall, for
+example, pressure, temperature etc.)</em>. Then the gradient of <span
+class="math inline">\(\phi\)</span> is stated as:</p>
+<p><span class="math display">\[\begin{equation}
+  \nabla\phi
+    = \frac{\partial\phi}{\partial x_1}\,\hat{\underbar{$\bm{x}$}}_{1}
+    + \frac{\partial\phi}{\partial x_2}\,\hat{\underbar{$\bm{x}$}}_{2}
+    + \frac{\partial\phi}{\partial x_3}\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{equation}\]</span></p>
+<p>or</p>
+<p><span class="math display">\[\begin{equation}
+  \nabla\phi
+    = \frac{\partial\phi}{\partial x}\,\hat{\underbar{$\bm{x}$}}
+    + \frac{\partial\phi}{\partial y}\,\hat{\underbar{$\bm{y}$}}
+    + \frac{\partial\phi}{\partial z}\,\hat{\underbar{$\bm{z}$}}
+\end{equation}\]</span></p>
+<p><strong><span style="color: blue!70">Interpreting gradient as a
+descriptor for physics variables:</span></strong> Broadly, gradients
+relate to rates of change of physical quantities in a fluid flow. For a
+physical quantity <span class="math inline">\(\phi\)</span>, <span
+class="math inline">\(\nabla\phi\)</span> will be
+<strong>perpendicular</strong> to the curves of constant <span
+class="math inline">\(\phi\)</span>. <span class="smallcaps">And</span>:
+Along the direction given by <span
+class="math inline">\(\hat{\underbar{$\bm{n}$}}\)</span>, the <u><span
+class="smallcaps">rate of change</span></u> is <span
+class="math inline">\(\nabla\phi\cdot\hat{\underbar{$\bm{n}$}}\)</span>.
+(<em>Think of this as a spatial rate of change</em>)</p>
+<figure id="fig:c1-gradient" data-latex-placement="htbp">
+
+<figcaption><span class="math inline">\(\nabla\phi\)</span> is
+perpendicular to level curves <span class="math inline">\(\phi =
+\mathrm{const}\)</span> and points in the direction of steepest
+increase.</figcaption>
+</figure>
+<h3 id="divergence">Divergence</h3>
+<p>Assume <span class="math inline">\(\underbar{$\bm{u}$}\)</span> is a
+vector function describing a fluid flow variable (<em>recall, for
+example, velocity, force etc.)</em>. Then the divergence of <span
+class="math inline">\(\underbar{$\bm{u}$}\)</span> is stated as:</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$} = \underbar{$\bm{u}$}(\underbar{$\bm{x}$})
+    = u_1(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{1} +
+u_2(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{2} +
+u_3(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{equation}\]</span></p>
+<p><span class="math display">\[\begin{equation}
+  \nabla\cdot\underbar{$\bm{u}$}
+    = \frac{\partial u_1}{\partial x_1}
+    + \frac{\partial u_2}{\partial x_2}
+    + \frac{\partial u_3}{\partial x_3}
+\end{equation}\]</span></p>
+<p>or</p>
+<p><span class="math display">\[\begin{equation}
+  \nabla \cdot \underbar{$\bm{u}$} = \frac{\partial u_1}{\partial x}
+  + \frac{\partial u_2}{\partial y}
+  + \frac{\partial u_3}{\partial z}
+\end{equation}\]</span></p>
+<figure id="fig:c1-divergence" data-latex-placement="htbp">
+
+<figcaption>Divergence as net flux: (left) more going out than in,
+Divergence <span class="math inline">\(&gt;0\)</span>; (right) more
+going in than out, Divergence <span
+class="math inline">\(&lt;0\)</span>.</figcaption>
+</figure>
+<p><strong><span style="color: blue!70">Interpreting divergence as a
+descriptor for physics variables:</span></strong> As shown above, <span
+class="smallcaps">divergence</span> is physically related to a measure
+of <span class="smallcaps">“stuff”</span> going in and out of a region.
+This is commonly referred to as <span class="smallcaps">Flux</span>. As
+shown in the sketch above, if net flux along the positive outward normal
+direction is positive (<em>going out greater than going in</em>), then
+net divergence is positive.</p>
+<figure id="fig:c1-divergencetheorem" data-latex-placement="htb">
+
+<figcaption>Domain <span class="math inline">\(\Omega\)</span> with
+outward unit normal <span
+class="math inline">\(\hat{\underbar{$\bm{n}$}}\)</span> on boundary
+<span class="math inline">\(S\)</span>, as used in the Divergence
+Theorem.</figcaption>
+</figure>
+<p><span class="math display">\[\begin{align}
+  \Omega &amp;\;\to\; \text{closed region (circle)} \notag \\
+  \hat{\underbar{$\bm{n}$}}&amp;\;\to\; \text{outward normal on circle
+boundary} \notag \\
+  S      &amp;\;\to\; \text{boundary (perimeter of circle)} \notag
+\end{align}\]</span></p>
+<p>There is a formal mathematical relation between flux and divergence,
+stated using the <span class="smallcaps">Divergence Theorem</span>.</p>
+<p><span class="math display">\[\begin{equation}
+  \underbrace{\iiint_{\Omega}\nabla\cdot\underbar{$\bm{u}$}\;d\Omega}_{\displaystyle\text{Divergence}}
+  =
+  \underbrace{\iint_{S}\underbar{$\bm{u}$}\cdot\hat{\underbar{$\bm{n}$}}\;dS}_{\displaystyle\text{Flux}}
+\end{equation}\]</span></p>
+<h3 id="curl">Curl</h3>
+<p>Assume <span class="math inline">\(\underbar{$\bm{u}$}\)</span> is a
+vector function describing a fluid flow variable (<em>recall, for
+example, velocity, force etc.)</em>. Then the curl of <span
+class="math inline">\(\underbar{$\bm{u}$}\)</span> is stated as:</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$} = \underbar{$\bm{u}$}(\underbar{$\bm{x}$})
+    = u_1(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{1} +
+u_2(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{2} +
+u_3(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{equation}\]</span></p>
+<p><span class="math display">\[\begin{align}
+  \nabla\times\underbar{$\bm{u}$}
+    &amp;= \left(\frac{\partial u_3}{\partial x_2}
+           - \frac{\partial u_2}{\partial
+x_3}\right)\hat{\underbar{$\bm{x}$}}_{1} \\
+    &amp;+ \left(\frac{\partial u_1}{\partial x_3}
+           - \frac{\partial u_3}{\partial
+x_1}\right)\hat{\underbar{$\bm{x}$}}_{2} \\
+    &amp;+ \left(\frac{\partial u_2}{\partial x_1}
+           - \frac{\partial u_1}{\partial
+x_2}\right)\hat{\underbar{$\bm{x}$}}_{3}
+\end{align}\]</span></p>
+<p><strong><span style="color: blue!70">Interpreting curl as a
+descriptor for physics variables:</span></strong> The curl of a vector
+function represents the <span class="smallcaps">rotational</span> parts
+of the vector function. This is best imagined if we truly consider <span
+class="math inline">\(\underbar{$\bm{u}$}\)</span> describing the fluid
+flow velocity, and the flow has a swirling or rotational component in
+it, the curl of the velocity (as we will call it later, <span
+class="smallcaps">vorticity</span>) is non-zero.</p>
+<figure id="fig:curl" data-latex-placement="htbp">
+
+<figcaption>Curl interpretation: (left) uniform parallel flow, Curl
+<span class="math inline">\(= 0\)</span>; (right) rotational flow, Curl
+<span class="math inline">\(\neq 0\)</span>.</figcaption>
+</figure>
+<h3 id="laplacian">Laplacian</h3>
+<p>Assume <span class="math inline">\(\phi(\underbar{$\bm{x}$})\)</span>
+is a scalar function describing a fluid flow variable. Then the
+Laplacian of <span class="math inline">\(\phi\)</span> is stated as:</p>
+<p><span class="math display">\[\begin{equation}
+  \nabla^2\phi
+    = \frac{\partial^2\phi}{\partial x_1^2}
+    + \frac{\partial^2\phi}{\partial x_2^2}
+    + \frac{\partial^2\phi}{\partial x_3^2}
+\end{equation}\]</span></p>
+<p>For <span class="smallcaps">vector functions</span> <span
+class="math inline">\(\to\)</span> the above definition applies
+component-wise for each vector component:</p>
+<p><span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$} =
+u_1(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{1} +
+u_2(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{2} +
+u_3(\underbar{$\bm{x}$})\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{equation}\]</span></p>
+<p><span class="math display">\[\begin{align}
+  \nabla^2\underbar{$\bm{u}$}
+    &amp;= \left(\frac{\partial^2 u_1}{\partial x_1^2}
+           + \frac{\partial^2 u_1}{\partial x_2^2}
+           + \frac{\partial^2 u_1}{\partial
+x_3^2}\right)\hat{\underbar{$\bm{x}$}}_{1} \\[6pt]
+    &amp;+ \left(\frac{\partial^2 u_2}{\partial x_1^2}
+           + \frac{\partial^2 u_2}{\partial x_2^2}
+           + \frac{\partial^2 u_2}{\partial
+x_3^2}\right)\hat{\underbar{$\bm{x}$}}_{2} \\[6pt]
+    &amp;+ \left(\frac{\partial^2 u_3}{\partial x_1^2}
+           + \frac{\partial^2 u_3}{\partial x_2^2}
+           + \frac{\partial^2 u_3}{\partial
+x_3^2}\right)\hat{\underbar{$\bm{x}$}}_{3}
+\end{align}\]</span></p>
+<p><strong><span style="color: blue!70">Interpreting Laplacian as a
+descriptor for physics variables:</span></strong> This one can be a bit
+tricky, but quite broadly, we encounter Laplacians a lot when we discuss
+physical processes that tend to <em>smear out information in space in a
+uniform manner</em>. Think some physics, in a fluid flow, that is
+smearing out concentration (<em>that creamer mixing in your morning
+coffee without you stirring it!</em>). We commonly call this <span
+class="smallcaps">Diffusion</span>.</p>
+<p><strong>Note:</strong> Other related mathematical formulas and
+relations will be introduced throughout the semester as needed.</p>
+<div class="notebox">
+<p>To summarize then, we have the following basic inter-relationships
+between physical descriptions and vector calculus operations:</p>
+<ul>
+<li><p><span class="smallcaps">Gradient</span>: relates to spatial rate
+of change.</p></li>
+<li><p><span class="smallcaps">Divergence</span>: relates to flux
+entering and exiting a region.</p></li>
+<li><p><span class="smallcaps">Curl</span>: relates to extent of
+rotation.</p></li>
+<li><p><span class="smallcaps">Laplacian</span>: relates to descrition
+of diffusion processes.</p></li>
+</ul>
+</div>
+<h2 id="examples-1">Examples</h2>
+<div class="tcolorbox">
+<p>The pressure of air inside a rectangular chamber can be described as:
+<span class="math display">\[\begin{equation}
+  P(\underbar{$\bm{x}$}) = P(x,y) = \frac{x^2}{25} + \frac{y^2}{16}
+\end{equation}\]</span> Find the gradient of the pressure.</p>
+<p><strong>Solution:</strong> Using the definition of gradient: <span
+class="math display">\[\begin{equation}
+  \nabla P
+    = \frac{\partial P}{\partial x}\,\hat{\underbar{$\bm{x}$}}_{1}
+    + \frac{\partial P}{\partial y}\,\hat{\underbar{$\bm{x}$}}_{2}
+    + \frac{\partial P}{\partial z}\,\hat{\underbar{$\bm{x}$}}_{3}
+\end{equation}\]</span> <span class="math inline">\(\dfrac{\partial
+P}{\partial x}\)</span> = derivative of <span
+class="math inline">\(P\)</span> taken only with respect to <span
+class="math inline">\(x\)</span>, keeping <span
+class="math inline">\(y,z\)</span> constant/fixed: <span
+class="math display">\[\begin{equation}
+  \frac{\partial P}{\partial x}
+    = \frac{\partial}{\partial x}\!\left[\frac{x^2}{25} +
+\frac{y^2}{16}\right]
+    = \frac{2x}{25}
+\end{equation}\]</span> Proceeding similarly: <span
+class="math display">\[\begin{align}
+  \frac{\partial P}{\partial y}
+    &amp;= \frac{\partial}{\partial
+y}\!\left[\frac{x^2}{25}+\frac{y^2}{16}\right]
+     = \frac{2y}{16} = \frac{y}{8} \\[6pt]
+  \frac{\partial P}{\partial z}
+    &amp;= \frac{\partial}{\partial
+z}\!\left[\frac{x^2}{25}+\frac{y^2}{16}\right]
+     = 0
+\end{align}\]</span></p>
+<p>Putting all the pieces together: <span
+class="math display">\[\begin{equation}
+  \nabla P = \frac{2x}{25}\,\hat{\underbar{$\bm{x}$}}_{1} +
+\frac{y}{8}\,\hat{\underbar{$\bm{x}$}}_{2} +
+0\,\hat{\underbar{$\bm{x}$}}_{3}
+  \qquad\text{or}\qquad
+  \nabla P = \frac{2x}{25}\,\hat{\underbar{$\bm{x}$}}_{1} +
+\frac{y}{8}\,\hat{\underbar{$\bm{x}$}}_{2}
+\end{equation}\]</span></p>
+</div>
+<div class="tcolorbox">
+<p>Consider a flow velocity vector that is written as a function: <span
+class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$} = (\alpha x^2 - \theta
+x)\,\hat{\underbar{$\bm{x}$}}+ (\beta y^2 + \theta
+y)\,\hat{\underbar{$\bm{y}$}}
+\end{equation}\]</span> where <span
+class="math inline">\(\alpha,\,\theta,\,\beta\)</span> are constants.
+Calculate the divergence of this velocity vector function.</p>
+<p><strong>Solution:</strong> The velocity vector is: <span
+class="math display">\[\begin{align}
+  \underbar{$\bm{u}$} &amp;= u\,\hat{\underbar{$\bm{x}$}}+
+v\,\hat{\underbar{$\bm{y}$}}+ w\,\hat{\underbar{$\bm{z}$}}\\
+         &amp;= (\alpha x^2-\theta x)\,\hat{\underbar{$\bm{x}$}}
+            + (\beta y^2+\theta y)\,\hat{\underbar{$\bm{y}$}}
+            + (0)\,\hat{\underbar{$\bm{z}$}}
+\end{align}\]</span></p>
+<p>Using the definition of divergence: <span
+class="math display">\[\begin{equation}
+  \nabla\cdot\underbar{$\bm{u}$}
+    = \frac{\partial u}{\partial x}
+    + \frac{\partial v}{\partial y}
+    + \frac{\partial w}{\partial z}
+\end{equation}\]</span> <span class="math inline">\(\dfrac{\partial
+u}{\partial x}\)</span> = derivative of <span
+class="math inline">\(u\)</span> taken only with respect to <span
+class="math inline">\(x\)</span>, keeping <span
+class="math inline">\(y\)</span> and <span
+class="math inline">\(z\)</span> constant/fixed: <span
+class="math display">\[\begin{equation}
+  \frac{\partial u}{\partial x}
+    = \frac{\partial}{\partial x}\bigl[\alpha x^2 - \theta x\bigr]
+    = 2\alpha x - \theta
+\end{equation}\]</span> Proceeding similarly: <span
+class="math display">\[\begin{align}
+  \frac{\partial v}{\partial y}
+    &amp;= \frac{\partial}{\partial y}\bigl[\beta y^2 + \theta y\bigr]
+     = 2\beta y + \theta \\[4pt]
+  \frac{\partial w}{\partial z}
+    &amp;= \frac{\partial}{\partial z}[0] = 0
+\end{align}\]</span></p>
+<p>Hence: <span class="math display">\[\begin{align}
+  \nabla\cdot\underbar{$\bm{u}$}
+    &amp;= (2\alpha x - \theta) + (2\beta y + \theta) + 0 \\
+    &amp;= 2\alpha x + 2\beta y
+\end{align}\]</span></p>
+</div>
+<div class="tcolorbox">
+<p>For the same velocity function provided in the previous example,
+calculate the <strong>vorticity</strong> <span
+class="math inline">\(\underbar{$\bm{\omega}$} =
+\nabla\times\underbar{$\bm{u}$}\)</span> [the curl of the velocity]:
+<span class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$} = (\alpha x^2 - \theta
+x)\,\hat{\underbar{$\bm{x}$}}+ (\beta y^2 + \theta
+y)\,\hat{\underbar{$\bm{y}$}}
+\end{equation}\]</span> <strong>Solution:</strong> We will directly use
+the definition of the curl: <span
+class="math display">\[\begin{equation}
+  \underbar{$\bm{u}$} = u\,\hat{\underbar{$\bm{x}$}}+
+v\,\hat{\underbar{$\bm{y}$}}+ w\,\hat{\underbar{$\bm{z}$}}
+\end{equation}\]</span> <span class="math display">\[\begin{align}
+  \nabla\times\underbar{$\bm{u}$}
+    &amp;= \left(\frac{\partial w}{\partial y}
+           - \frac{\partial v}{\partial
+z}\right)\hat{\underbar{$\bm{x}$}}
+     + \left(\frac{\partial u}{\partial z}
+           - \frac{\partial w}{\partial
+x}\right)\hat{\underbar{$\bm{y}$}}
+     + \left(\frac{\partial v}{\partial x}
+           - \frac{\partial u}{\partial
+y}\right)\hat{\underbar{$\bm{z}$}}
+\end{align}\]</span></p>
+<p>With <span class="math inline">\(u = \alpha x^2 - \theta x\)</span>:
+<span class="math inline">\(\dfrac{\partial u}{\partial y} =
+\dfrac{\partial u}{\partial z} = 0\)</span></p>
+<p>With <span class="math inline">\(v = \beta y^2 + \theta y\)</span>:
+<span class="math inline">\(\dfrac{\partial v}{\partial x} = 0 =
+\dfrac{\partial v}{\partial z}\)</span></p>
+<p>Similarly, <span class="math inline">\(w = 0\)</span>: <span
+class="math inline">\(\dfrac{\partial w}{\partial x} = \dfrac{\partial
+w}{\partial y} = 0\)</span></p>
+<p>Hence, plugging everything in, we get: <span
+class="math display">\[\begin{equation}
+  \underbar{$\bm{\omega}$} = \nabla\times\underbar{$\bm{u}$} =
+0\,\hat{\underbar{$\bm{x}$}}+ 0\,\hat{\underbar{$\bm{y}$}}+
+0\,\hat{\underbar{$\bm{z}$}}= \underbar{$\bm{0}$}
+\end{equation}\]</span></p>
+</div>
+<h2 id="units-and-dimensions">Units and Dimensions</h2>
+<p>In the above descriptions, we noted the vector calculus operations on
+arbitrary variables (such as <span class="math inline">\(\phi\)</span>,
+<span class="math inline">\(\underbar{$\bm{u}$}\)</span>) etc. In fluid
+mechanics, these variables can broadly be considered to describe:</p>
+<ul>
+<li><p><span class="smallcaps">Fluid Properties:</span> quantities that
+describe some attributes of the fluid itself e.g. viscosity, density
+etc.</p></li>
+<li><p><span class="smallcaps">Flow Variables:</span> quantities that
+describe attributes of the fluid flow/motion e.g. velocity, pressure
+etc.</p></li>
+</ul>
+<p>Any physical quantity, scalar or vector, fluid property or flow
+variable, will be presented in a system of standard <span
+class="smallcaps">units</span>. Their value will change based on the
+unit system of choice. Without the specified units, the numeric value
+associated with the physical quantity is incomplete for any real
+engineering work.</p>
+<p><strong>For example.</strong> The length of a ruler can be expressed
+as <span class="math display">\[\begin{equation}
+  12\text{ in} \;=\; 1\text{ ft} \;=\; 30.5\text{ cm}.
+\end{equation}\]</span> But it is the <em>same</em> amount of length
+expressed in different units. The underlying physical quantity that is
+actually being measured or quantified is called a <span
+class="smallcaps">dimension</span>. The dimension is where we make the
+distinction that the length of the ruler cannot be stated in kilograms
+for instance.</p>
+<h2 id="fundamental-and-derived-dimensions">Fundamental and Derived
+Dimensions</h2>
+<p>Dimensions can be of two types:</p>
+<div class="minipage">
+<p><strong><span style="color: teal!60!black">Fundamental
+Dimensions</span></strong> <span class="math display">\[\begin{align}
+  \text{mass}   &amp;\;\to\; M \\
+  \text{length} &amp;\;\to\; L \\
+  \text{time}   &amp;\;\to\; T
+\end{align}\]</span></p>
+</div>
+<div class="minipage">
+<p><strong><span style="color: violet!70!black">Derived
+Dimensions</span></strong> <span class="math display">\[\begin{align}
+  \text{speed: } \; \left[\,u\,\right]    &amp;= \frac{L}{T} \\
+  \text{density: } \; \left[\,\rho\,\right] &amp;= \frac{M}{L^3}
+\end{align}\]</span></p>
+</div>
+<p>Typically dimensions are indicated using bracket notation <span
+class="math inline">\(\left[\,\cdot\,\right]\)</span>. In the example
+above, we have used the <strong>MLT</strong> system (Mass, Length, Time)
+of representation. There is also the <strong>FLT</strong> system (Force,
+Length, Time) system of representing dimension as well.</p>
+<div class="notebox">
+<p>Physical quantities must be represented using the correct dimensions
+and using a consistent system of units.</p>
+</div>
+<h5 id="for-example.">For example.</h5>
+<p>While units of acceleration can be <span
+class="math inline">\(\text{m/s}^2\)</span>, <span
+class="math inline">\(\text{ft/s}^2\)</span>, <span
+class="math inline">\(\text{in/s}^2\)</span>, or <span
+class="math inline">\(\text{cm/s}^2\)</span>, the dimension of
+acceleration (in the MLT system) will always be <span
+class="math display">\[\begin{equation}
+  \left[\,\text{Acceleration}\,\right] = LT^{-2}.
+\end{equation}\]</span></p>
+<h2 id="deriving-dimensions-from-fundamental-equations">Deriving
+Dimensions from Fundamental Equations</h2>
+<p>Say we want to obtain the dimensions of <strong>force</strong> using
+the fundamental dimension system <span class="math inline">\(M, L,
+T\)</span>.</p>
+<figure id="fig:force-labels" data-latex-placement="ht">
+<p><em>Figure: The equation F equals m times a, with leader arrows
+connecting each symbol to a label below it: F to Force, m to Mass, and a
+to Acceleration.</em></p>
+<figcaption>Newton’s second law, with each symbol
+identified.</figcaption>
+</figure>
+<p><strong><span style="color: red!65!black">Rule: Dimensions must match
+on both sides of the equation</span></strong>, so: <span
+class="math display">\[\begin{align}
+  \left[\,F\,\right] &amp;= \left[\,m\,\right]\left[\,a\,\right] \\
+          &amp;= M \times LT^{-2} \\
+          &amp;= MLT^{-2} \quad \text{or} \quad \frac{ML}{T^2}
+\end{align}\]</span></p>
+<p>It is more common to write the first of the two formats: e.g. <span
+class="math inline">\(MLT^{-2}\)</span></p>
+<div class="example">
+<p><span>Example: Dimensions of Energy</span> Use the same concept to
+find the dimensions of energy.</p>
+<p><strong>Solution.</strong> Recall that the fundamental relation
+defining energy (<span class="math inline">\(E\)</span>) is <span
+class="math display">\[\begin{align}
+  E &amp;= \text{Force} \times \text{Displacement} \\
+    &amp;= \text{Mass} \times \text{Acceleration} \times
+\text{Displacement}
+\end{align}\]</span> <span class="math display">\[\begin{align}
+  \left[\,E\,\right] &amp;= \left[\,\text{Mass}\,\right] \cdot
+\left[\,\text{Acceleration}\,\right] \cdot
+\left[\,\text{Displacement}\,\right] \\
+          &amp;= M \cdot LT^{-2} \cdot L
+\end{align}\]</span> Here, <span class="math display">\[\begin{equation}
+  \left[\,E\,\right] = ML^2T^{-2}.
+\end{equation}\]</span></p>
+</div>
+<div class="notebox">
+<p>Always check the following for a given problem/solution:</p>
+<ol>
+<li><p>Are dimensions matching throughout your calculation?</p></li>
+<li><p>Do your units make sense?</p></li>
+<li><p>Are you using a consistent unit system (SI, cgs, etc.)?</p></li>
+<li><p>You cannot add/subtract quantities in different units or having
+different dimensions.</p></li>
+</ol>
+</div>
+<p><strong>Do all relevant quantities or numbers have a
+dimension?</strong> All physical quantities do. However, we will see
+later on that there can be <em>non-dimensional numbers</em> that are
+important for certain types of fluid mechanics analyses. Additionally,
+exponents in physical equations are completely dimensionless. Meaning if
+we have a quantity: <span class="math inline">\(\exp{(\alpha
+t^2)}\)</span> then <span class="math inline">\(\alpha t^2\)</span> must
+be completely dimensionless. In both of these instances, the
+dimensionless quantities must have 0 exponent for each fundamental
+dimension: i.e.</p>
+<p><span class="math display">\[\begin{equation}
+    M^0 L^0 T^0 \rightarrow \text{dimensionless}
+\end{equation}\]</span></p>
+<h2 id="dimensions-of-derivatives-and-integrals">Dimensions of
+Derivatives and Integrals</h2>
+<p><strong><span style="color: red!65!black">How do dimensions work for
+derivatives?</span></strong> If the dimension of a quantity <span
+class="math inline">\(\varphi\)</span> is <span
+class="math inline">\(\left[\,\varphi\,\right]\)</span>, then <span
+class="math display">\[\begin{align}
+  \left[\,\dfrac{\partial \varphi}{\partial x}\,\right] &amp;\to
+\frac{\left[\,\varphi\,\right]}{L} \\
+  \left[\,\dfrac{\partial \varphi}{\partial t}\,\right] &amp;\to
+\frac{\left[\,\varphi\,\right]}{T} \quad \text{etc.}
+\end{align}\]</span></p>
+<p><strong><span style="color: red!65!black">How do dimensions work for
+integrals?</span></strong> Similarly, for a quantity <span
+class="math inline">\(\varphi\)</span> with dimension <span
+class="math inline">\(\left[\,\varphi\,\right]\)</span>, <span
+class="math display">\[\begin{align}
+  \left[\,\int \varphi \, dx\,\right] &amp;= \left[\,\varphi\,\right]
+\cdot L \\
+  \left[\,\int \varphi \, dt\,\right] &amp;= \left[\,\varphi\,\right]
+\cdot T
+\end{align}\]</span></p>
+<div class="example">
+<p><span>Example: Dimensions of Dynamic Viscosity</span> Use the
+following relation, commonly called Newton’s Law of Viscosity, to find
+the dimensions of dynamic viscosity <span
+class="math inline">\(\mu\)</span> in M.L.T system, assuming <span
+class="math inline">\(\tau\)</span> is stress (force/area), and <span
+class="math inline">\(u\)</span> is velocity.</p>
+<p><span class="math display">\[\begin{equation}
+    \tau = \mu \dfrac{\partial u}{\partial y}
+\end{equation}\]</span></p>
+<p>Using dimension of equation being equal on both sides:</p>
+<p><span class="math display">\[\begin{equation}
+    \left[\,\tau\,\right] = \left[\,\mu\,\right] \left[\,\dfrac{\partial
+u}{\partial y}\,\right]
+\end{equation}\]</span></p>
+<p>Using the rule above for dimensions of derivatives:</p>
+<p><span class="math display">\[\begin{equation}
+    \left[\,\dfrac{\partial u}{\partial y}\,\right] =
+\frac{\left[\,u\,\right]}{L}
+\end{equation}\]</span></p>
+<p>The dimension of stress is:</p>
+<p><span class="math display">\[\begin{equation}
+    \left[\,\tau\,\right] =
+\frac{\left[\,\text{Force}\,\right]}{\left[\,\text{Area}\,\right]} =
+\frac{MLT^{-2}}{L^2} = ML^{-1}T^{-2}
+\end{equation}\]</span></p>
+<p>Assembling everything:</p>
+<p><span class="math display">\[\begin{align}
+    \left[\,\tau\,\right] &amp;= \left[\,\mu\,\right]
+\left[\,\dfrac{\partial u}{\partial y}\,\right] \\
+    ML^{-1}T^{-2} &amp;= \left[\,\mu\,\right] \frac{L T^{-1}}{L} \\
+    \left[\,\mu\,\right] &amp;= ML^{-1}T^{-1}
+\end{align}\]</span></p>
+</div>
+<h1 id="fluid-mechanics-fundamental-properties-of-fluids">Fluid
+Mechanics: Fundamental Properties of Fluids</h1>
+<h2 id="what-is-a-fluid">What is a fluid?</h2>
+<p>We start our discussion with the fundamental question: <span
+class="smallcaps">What is a fluid?</span> This seems, at the outset,
+quite intuitive. We would define a fluid as <em>anything that
+flows</em>. However, from the standpoint of precise physical
+description, we need to further clarify or define what <span
+class="smallcaps">Flow</span> actually is.</p>
+<p><strong>A Thought Experiment:</strong></p>
+<p>Imagine taking a 1 cm<sup>3</sup> block of wood, and a 1
+cm<sup>3</sup> blob of, say, honey. Imagine you place both on a rigid
+wooden table top.</p>
+<ul>
+<li><p>What do you think will happen if you let both simply rest on the
+table top?</p></li>
+<li><p>What do you think will happen if you start pressing and moving
+both around with a spoon or a stirring rod?</p></li>
+</ul>
+<p>If you think about it, one (the blob of honey, which we will call a
+<em>fluid</em> in this experiment) will <span
+class="smallcaps">Deform</span> while the other will not, at least not
+to the naked eye (the block of wood, which we call a <em>solid</em>
+instead). They both will continue to still be on the table, and even if
+we moved the blobs a little to the left or to the right (executing what
+we may call a <span class="smallcaps">rigid body motion</span>), our
+expected behaviors in this thought experiment will not change.</p>
+<p>Thus, <span class="smallcaps">Flow</span> is intrinsically related to
+<span class="smallcaps">Deformation</span> and does not just indicate
+<span class="smallcaps">Motion</span>.</p>
+<p>A fluid will <em>deform continuously</em> under the action of an
+applied (<em>shear</em>) force. The fluid will not return to any of its
+previous shapes when this force is withdrawn. That is, <em>it takes the
+shape of the container</em>. A solid will deform under the action of an
+applied (<em>shear</em>) force until its internal forces balance the
+applied force. The solid may retain that <em>preferred</em> shape, or
+get back to its original shape when this force is withdrawn.</p>
+<h2 id="the-continuum-hypothesis">The Continuum Hypothesis</h2>
+<p>The above discussion connects the fundamental definition of fluids to
+<span class="smallcaps">Flow</span> which entails <span
+class="smallcaps">Deformation</span> under the action of <span
+class="smallcaps">Forces</span>. The net forces that lead to the
+deformations during in a fluid flow originate from applied external
+forces and their interplay with internal or molecular forces. In fact,
+the specific nature of the molecular interactions govern how the overall
+fluid behavior is going to be. As the individual molecules move and
+interact with each other at the <span
+class="smallcaps">microscale</span> we get to see the emergent flow and
+deformation behavior at the <span
+class="smallcaps">macroscale</span>.</p>
+<p><strong>However,</strong> for any practical fluid flow application,
+we cannot study the motion of each individual molecule to conduct a
+real-world analysis, <em>because there are so many of them! millions,
+and millions, and more!</em>. Therefore, assuming that the molecular
+density is <em>high enough</em> and the size/volume of the fluid sample
+is <em>large enough</em>, we can describe the fluid flow and behavior
+using <span class="smallcaps">Averaged</span> or <span
+class="smallcaps">Aggregated</span> variables and quantities. This idea
+is foundational to engineering analysis of fluid flows, and is referred
+to as the <span class="smallcaps">Continuum Hypothesis</span>.</p>
+<p>These averaged or aggregated quantities are mathematically described
+using variables that can change across <em>space</em> (<span
+class="math inline">\(\underbar{$\bm{x}$}\)</span>) and <em>time</em>
+(<span class="math inline">\(t\)</span>). As noted previously, the
+aggregate variables or quantities could be:</p>
+<ul>
+<li><p>Variables describing <em>Flow</em>: common examples <span
+class="math inline">\(\underbar{$\bm{u}$} \left( \underbar{$\bm{x}$}, t
+\right)\)</span>, <span class="math inline">\(p \left(
+\underbar{$\bm{x}$}, t \right)\)</span>.</p></li>
+<li><p>Variables describing the <em>Fluid</em>: common examples <span
+class="math inline">\(\rho \left( \underbar{$\bm{x}$}, t
+\right)\)</span>, <span class="math inline">\(\mu \left(
+\underbar{$\bm{x}$}, t \right)\)</span>.</p></li>
+</ul>
+<div class="notebox">
+<p>Commonly, for such space-time varying functions, we use the term
+<span class="smallcaps">Field Variables</span>. For example, we will
+commonly use descriptions of:</p>
+<ul>
+<li><p>Velocity field: <span class="math inline">\(\underbar{$\bm{x}$}
+\left( \underbar{$\bm{x}$}, t \right)\)</span>.</p></li>
+<li><p>Temperature field: <span class="math inline">\(T \left(
+\underbar{$\bm{x}$}, t \right)\)</span>.</p></li>
+<li><p>Pressure field: <span class="math inline">\(p \left(
+\underbar{$\bm{x}$}, t \right)\)</span>.</p></li>
+</ul>
+</div>
+<h2 id="forces-in-a-fluid">Forces in a fluid</h2>
+<p>Let us now talk about the forces in a fluid,. Once averaged or
+aggregated (as per the <em>continuum hypothesis</em>) across all applied
+and intermolecular interaction forces for a representative
+<em>Parcel</em> of fluid, the <strong>Net/Total</strong> forces on this
+fluid parcel can be categorized as:</p>
+<ul>
+<li><p><span class="smallcaps">Body Forces:</span> forces acting on the
+bulk of the fluid parcel. For example, weight, buoyancy etc.</p></li>
+<li><p><span class="smallcaps">Surface Forces:</span> forces acting
+along the surfaces of the fluid parcel.</p></li>
+</ul>
+<p>The surface forces, as shown in the figure above, are further
+categorized into <span class="smallcaps">Normal surface forces</span>
+which act perpendicular to each surface, and <span
+class="smallcaps">Tangential surface forces</span> acting parallel to
+the surface. The normal forces have the combined effect of compressing
+or expanding the fluid parcel, and results in what we refer to as <span
+class="smallcaps">Pressure</span>. The tangential forces on the other
+hand try to slide the parallel planes of the fluid in a motion that is
+commonly called <span class="smallcaps">Shear</span>, and consequently
+these tangential forces are commonly called <span
+class="smallcaps">Shear forces</span>.</p>
+<p>The surface forces have another niche mathematical detail we need to
+note.</p>
+</body>
+</html>
