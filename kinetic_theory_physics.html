@@ -390,7 +390,7 @@
     </section>
 
     <details class="code-panel card">
-      <summary>View the exact Python running this simulation</summary>
+      <summary>View the underlying Python code running this simulation!</summary>
       <p class="note">The block below is what actually executes, every frame, inside Pyodide. <strong>update()</strong> is your original function verbatim — position integration and the wall-reflection mask logic are untouched. The only things removed from your file are the matplotlib <code>scatters</code> argument and the <code>scatters.set_offsets(...)</code> call, since rendering now happens on an HTML canvas instead of matplotlib. Below that, two small functions were added so the page can drive it: <strong>reset()</strong> re-runs your two initialization lines with slider values, and <strong>frame_step()</strong> calls your unmodified <code>update()</code> once and reports what changed — it does not alter the physics.</p>
       <pre id="pySource"></pre>
     </details>
