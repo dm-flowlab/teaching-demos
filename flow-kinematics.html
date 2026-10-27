@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluid Parcel Kinematics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<style>
+/* Layout: a lab bench — controls beside a large flow-field plate, then four mode plates (a)–(d), the symbolic tensors, point values, and the reproducibility block. */
+:root{
+  --bg:#f2f5f6; --surface:#ffffff; --ink:#15212b; --muted:#5a6a75; --line:#d2dbe0; --soft:#e7edf0;
+  --dye:#c42a5e; --flow:#2a6a8a; --pos:#c4462e; --neg:#2c62b5; --ok:#2f7d4f; --code:#eef3f5;
+  --f-display:"Spectral", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1519; --surface:#152028; --ink:#e3ebef; --muted:#8fa0ab; --line:#2b3a44; --soft:#1d2a33;
+  --dye:#ff5f95; --flow:#72b4d3; --pos:#e86a50; --neg:#5f93e3; --ok:#5cc489; --code:#101a20; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0e1519; --surface:#152028; --ink:#e3ebef; --muted:#8fa0ab; --line:#2b3a44; --soft:#1d2a33;
+  --dye:#ff5f95; --flow:#72b4d3; --pos:#e86a50; --neg:#5f93e3; --ok:#5cc489; --code:#101a20; color-scheme:dark; }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-block:28px 56px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:flex;flex-direction:column;gap:40px}
+h1,h2{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(30px,4.2vw,44px);line-height:1.08}
+h2{font-size:24px;line-height:1.2}
+a{color:var(--flow)}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
+.lede{max-width:68ch;color:var(--muted);margin:10px 0 0}
+header{display:flex;flex-direction:column}
+.status{display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;font-family:var(--f-mono);color:var(--muted)}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.status[data-state="busy"] .dot{background:var(--flow);animation:pulse 1s infinite alternate}
+.status[data-state="ready"] .dot{background:var(--ok)}
+.status[data-state="error"] .dot{background:var(--pos)}
+@keyframes pulse{from{opacity:.35}to{opacity:1}}
+
+.top{display:grid;grid-template-columns:minmax(270px,340px) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.top{grid-template-columns:minmax(0,1fr)}}
+.controls{display:flex;flex-direction:column;gap:18px}
+.group{display:flex;flex-direction:column;gap:8px}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.expr{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:0 10px}
+.expr:focus-within{border-color:var(--flow);box-shadow:0 0 0 3px color-mix(in srgb,var(--flow) 22%,transparent)}
+.expr label{font-family:var(--f-mono);font-size:14px;color:var(--muted);white-space:nowrap}
+.expr input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font-family:var(--f-mono);font-size:15px;padding:10px 0;outline:none}
+.err{margin:0;color:var(--pos);font-size:13px}
+.hint{margin:0;color:var(--muted);font-size:12.5px;line-height:1.45}
+.hint code{font-family:var(--f-mono);font-size:12px;color:var(--ink)}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.presets button{font:inherit;font-size:13px;text-align:left;padding:7px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.presets button:hover{border-color:var(--flow)}
+.presets button[aria-pressed="true"]{border-color:var(--flow);background:color-mix(in srgb,var(--flow) 12%,var(--surface))}
+.nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.num{display:flex;flex-direction:column;gap:3px}
+.num label{font-size:12px;color:var(--muted)}
+.num input{width:100%;font-family:var(--f-mono);font-size:14px;padding:7px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--flow);outline-offset:2px}
+
+.stage{display:flex;flex-direction:column;gap:10px;min-width:0}
+.stage-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.key{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:2px solid var(--dye)}
+.sw.ghost{border-top:2px dashed var(--muted)}
+.sw.lin{border-top:2px dotted var(--ink)}
+.sw.arrow{border-top-color:var(--flow)}
+.stage-head select{font:inherit;font-size:13px;padding:4px 6px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.plate{position:relative;width:100%;max-width:680px;aspect-ratio:1/1;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.plate canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px;background:var(--surface);color:var(--muted);font-size:14px}
+.overlay strong{color:var(--ink);font-family:var(--f-display);font-size:20px;font-weight:600}
+#main{cursor:crosshair}
+.scale-note{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.timebar{display:flex;align-items:center;gap:12px;max-width:680px}
+.play{font:inherit;font-weight:600;font-size:13px;padding:7px 14px;border-radius:6px;border:1px solid var(--flow);background:var(--flow);color:var(--surface);cursor:pointer;min-width:74px}
+.timebar input[type=range]{flex:1;min-width:0;accent-color:var(--dye)}
+.tread{font-family:var(--f-mono);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tip{font-size:12.5px;color:var(--muted);margin:0}
+
+.section-head{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.section-head p{margin:0;color:var(--muted);max-width:74ch}
+.modes-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:1060px){.modes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.modes-grid{grid-template-columns:minmax(0,1fr)}}
+.mode{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0}
+.mode-title{display:flex;align-items:baseline;gap:8px}
+.mode-title .tag{font-family:var(--f-display);font-style:italic;color:var(--muted);font-size:17px}
+.mode-title h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:19px}
+.mode .plate{max-width:none;border-radius:8px}
+.formula{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);margin:0}
+.readout{font-family:var(--f-mono);font-size:13px;margin:0;font-variant-numeric:tabular-nums;min-height:2.9em;white-space:pre-line}
+
+.sym-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.quant-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.qcard h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+.tex{overflow-x:auto;overflow-y:hidden;font-size:15px;min-height:1.6em}
+.tex .katex-display{margin:.2em 0;text-align:left}
+.tex .katex-display>.katex{text-align:left}
+.tex.plain{font-family:var(--f-mono);font-size:13px;white-space:pre-wrap}
+.mrow{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:14px;flex-wrap:wrap}
+.mat{display:inline-grid;grid-template-columns:auto auto;gap:4px 16px;padding:6px 10px;border-left:1.5px solid var(--ink);border-right:1.5px solid var(--ink);border-radius:5px;text-align:right;font-variant-numeric:tabular-nums}
+.sub{font-size:12px;color:var(--muted);font-family:var(--f-body);margin:0}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:0;font-size:14px}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0;font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid currentColor}
+.chip.yes{color:var(--ok)} .chip.no{color:var(--pos)}
+
+.repro{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.repro{grid-template-columns:minmax(0,1fr)}}
+.codebox{position:relative;background:var(--code);border:1px solid var(--line);border-radius:8px;min-width:0}
+.codebox pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.55;color:var(--ink)}
+.copy{position:absolute;top:8px;right:8px;font:inherit;font-size:12px;padding:4px 10px;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.srcbox{margin-top:16px}
+.srcbox summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--flow);margin-bottom:10px}
+.srcbox pre{max-height:520px;overflow:auto}
+.files{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.files ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.files code{font-family:var(--f-mono);font-size:13px}
+footer{color:var(--muted);font-size:13.5px;max-width:80ch;border-top:1px solid var(--line);padding-top:18px}
+footer p{margin:0 0 8px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="eyebrow">2D kinematics · velocity gradient decomposition</p>
+  <h1>Fluid Parcel Kinematics</h1>
+  <p class="lede">Type a two-dimensional velocity field. SymPy derives the velocity gradient, strain rate, spin, divergence and vorticity exactly. A square fluid parcel is carried by the full flow in the large plate, and its local motion is split into translation, rotation, elongation and shear in the four plates below.</p>
+  <div class="status" id="status" data-state="busy"><span class="dot"></span><span id="statusText">Starting…</span></div>
+</header>
+
+<section class="top">
+  <aside class="controls">
+    <div class="group">
+      <span class="label">Velocity field</span>
+      <div class="expr"><label for="uIn">u(x, y) =</label><input id="uIn" spellcheck="false" autocomplete="off"></div>
+      <div class="expr"><label for="vIn">v(x, y) =</label><input id="vIn" spellcheck="false" autocomplete="off"></div>
+      <p class="err" id="err" hidden></p>
+      <p class="hint">Variables <code>x</code>, <code>y</code>, <code>r</code>, <code>theta</code>; constants <code>pi</code>, <code>e</code>. Operators <code>+ − * / ^</code>. Functions <code>sin cos tan exp ln sqrt abs sinh cosh tanh atan2(y,x)</code>. Write <code>2x</code> or <code>x*y</code> (not <code>xy</code>). Check the parsed field under Symbolic results.</p>
+    </div>
+    <div class="group">
+      <span class="label">Example flows</span>
+      <div class="presets" id="presets"></div>
+    </div>
+    <div class="group">
+      <span class="label">Parcel</span>
+      <div class="nums">
+        <div class="num"><label for="x0">center x₀</label><input id="x0" type="number" step="0.1"></div>
+        <div class="num"><label for="y0">center y₀</label><input id="y0" type="number" step="0.1"></div>
+        <div class="num"><label for="side">side a</label><input id="side" type="number" step="0.05" min="0.01"></div>
+      </div>
+      <p class="tip">Click on the flow plate to move the parcel there.</p>
+    </div>
+    <div class="group">
+      <span class="label">View and time</span>
+      <div class="nums">
+        <div class="num"><label for="extent">half-width</label><input id="extent" type="number" step="0.5" min="0.1"></div>
+        <div class="num"><label for="dur">duration T</label><input id="dur" type="number" step="0.1" min="0.01"></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <div class="stage-head">
+      <div class="legend">
+        <span class="key"><span class="sw"></span>parcel, full flow</span>
+        <span class="key"><span class="sw ghost"></span>initial square</span>
+        <label class="key"><input type="checkbox" id="linToggle" checked><span class="sw lin"></span>linear approximation</label>
+        <span class="key"><span class="sw arrow"></span>velocity</span>
+      </div>
+      <label class="key">Shading
+        <select id="bgSel">
+          <option value="vorticity">vorticity ω</option>
+          <option value="divergence">divergence ∇·u</option>
+          <option value="speed">speed |u|</option>
+          <option value="none">none</option>
+        </select>
+      </label>
+    </div>
+    <div class="plate">
+      <canvas id="main" aria-label="Velocity field with advected fluid parcel"></canvas>
+      <div class="overlay" id="overlay"><strong>Loading the Python engine</strong><span id="overlayText">The first visit downloads Pyodide, NumPy and SymPy (about 15 MB). Later visits load from the browser cache.</span></div>
+    </div>
+    <div class="scale-note" id="bgNote"></div>
+    <div class="timebar">
+      <button class="play" id="play" type="button">Play</button>
+      <input type="range" id="tRange" min="0" max="1000" value="600" aria-label="Time">
+      <span class="tread" id="tRead">t = 0</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Four modes of parcel motion</h2>
+    <p id="modesIntro">Each plate applies one part of the local velocity gradient, evaluated at the parcel's starting center, to the initial square over the same time t.</p>
+  </div>
+  <div class="modes-grid">
+    <figure class="mode">
+      <div class="mode-title"><span class="tag">(a)</span><h3>Translation</h3></div>
+      <div class="plate"><canvas id="m-trans"></canvas></div>
+      <p class="formula">u₀ = (u, v) at the center</p>
+      <p class="readout" id="r-trans"></p>
+    </figure>
+    <figure class="mode">
+      <div class="mode-title"><span class="tag">(b)</span><h3>Rotation</h3></div>
+      <div class="plate"><canvas id="m-rot"></canvas></div>
+      <p class="formula">Ω = ½(∂v/∂x − ∂u/∂y) = ω/2</p>
+      <p class="readout" id="r-rot"></p>
+    </figure>
+    <figure class="mode">
+      <div class="mode-title"><span class="tag">(c)</span><h3>Elongation</h3></div>
+      <div class="plate"><canvas id="m-str"></canvas></div>
+      <p class="formula">ε_xx = ∂u/∂x,  ε_yy = ∂v/∂y</p>
+      <p class="readout" id="r-str"></p>
+    </figure>
+    <figure class="mode">
+      <div class="mode-title"><span class="tag">(d)</span><h3>Shear (angular)</h3></div>
+      <div class="plate"><canvas id="m-shr"></canvas></div>
+      <p class="formula">ε_xy = ½(∂u/∂y + ∂v/∂x)</p>
+      <p class="readout" id="r-shr"></p>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Symbolic results</h2>
+    <p>Exact expressions derived by SymPy for any (x, y). The first card shows how your input was read, so you can confirm it before relying on the results.</p>
+  </div>
+  <div class="sym-grid">
+    <div class="qcard"><h3>Field as parsed</h3><div class="tex" id="s-uv"></div></div>
+    <div class="qcard"><h3>Velocity gradient ∇u</h3><div class="tex" id="s-L"></div></div>
+    <div class="qcard"><h3>Strain rate D = ½(L + Lᵀ)</h3><div class="tex" id="s-D"></div></div>
+    <div class="qcard"><h3>Spin W = ½(L − Lᵀ)</h3><div class="tex" id="s-W"></div></div>
+    <div class="qcard"><h3>Divergence and vorticity</h3><div class="tex" id="s-dw"></div></div>
+    <div class="qcard"><h3>Exact values at the center</h3><div class="tex" id="s-exact"></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Values at the parcel center</h2>
+    <p id="quantIntro">The symbolic results above, evaluated at (x₀, y₀) in double precision.</p>
+  </div>
+  <div class="quant-grid">
+    <div class="qcard">
+      <h3>Velocity</h3>
+      <dl class="kv"><dt>u₀</dt><dd id="q-u0"></dd><dt>v₀</dt><dd id="q-v0"></dd><dt>|u₀|</dt><dd id="q-sp"></dd></dl>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="qcard">
+      <h3>Velocity gradient ∇u</h3>
+      <div class="mrow">L =<span class="mat"><span id="L00"></span><span id="L01"></span><span id="L10"></span><span id="L11"></span></span></div>
+      <p class="sub">Rows: ∂u/∂x, ∂u/∂y · ∂v/∂x, ∂v/∂y</p>
+    </div>
+    <div class="qcard">
+      <h3>Strain rate D</h3>
+      <div class="mrow">D =<span class="mat"><span id="D00"></span><span id="D01"></span><span id="D10"></span><span id="D11"></span></span></div>
+      <p class="sub">Diagonal → elongation (c), off-diagonal → shear (d)</p>
+    </div>
+    <div class="qcard">
+      <h3>Spin W</h3>
+      <div class="mrow">W =<span class="mat"><span id="W00"></span><span id="W01"></span><span id="W10"></span><span id="W11"></span></span></div>
+      <p class="sub">Rigid rotation at rate Ω → rotation (b)</p>
+    </div>
+    <div class="qcard">
+      <h3>Scalar measures</h3>
+      <dl class="kv">
+        <dt>divergence ∇·u</dt><dd id="q-div"></dd>
+        <dt>vorticity ω</dt><dd id="q-w"></dd>
+        <dt>principal rates λ₁, λ₂</dt><dd id="q-lam"></dd>
+        <dt>principal axis angle</dt><dd id="q-phi"></dd>
+        <dt>max shear rate</dt><dd id="q-gmax"></dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Reproduce this view</h2>
+    <p>Every number and curve on this page comes from <code>kinematics.py</code>, which runs here in your browser through Pyodide. The same file runs unchanged in Python or Jupyter. This snippet updates with the current inputs.</p>
+  </div>
+  <div class="repro">
+    <div class="codebox"><button class="copy" id="copyBtn" type="button">Copy</button><pre id="code"></pre></div>
+    <div class="files">
+      <p class="sub">The full Python source is embedded in this page and is the exact code running here. Save it to run the snippet locally (needs <code>pip install sympy numpy</code>).</p>
+      <div class="chips"><a class="copy" id="dlPy" href="#" style="position:static;text-decoration:none">Download kinematics.py</a><button class="copy" id="copyPy" type="button" style="position:static">Copy source</button></div>
+      <p class="sub" id="versions"></p>
+    </div>
+  </div>
+  <details class="srcbox">
+    <summary>Show the Python source (kinematics.py)</summary>
+    <div class="codebox"><pre id="pySrcView"></pre></div>
+  </details>
+</section>
+
+<footer>
+  <p>Adding the four rates gives the linearized velocity near the center, u ≈ u₀ + (D + W)·ξ, where ξ is the position relative to the center. Each mode plate is that one term's exact flow map: shift by u₀t, rotation by Ωt, stretching by exp(ε_xx t) and exp(ε_yy t), and the shear map with cosh(ε_xy t) and sinh(ε_xy t).</p>
+  <p>The large plate integrates particle paths through the full field with fourth-order Runge–Kutta (240 frames, 3 substeps each), so the parcel bends where the flow is nonuniform. The dotted outline is the exact flow map of the linearized field. Fields are steady.</p>
+</footer>
+</div>
+
+<!-- BEGIN kinematics.py (generated by embed_python.py; edit kinematics.py, then rerun) -->
+<script type="text/x-python" id="kinematics-src">
+#!/usr/bin/env python3
+"""
+kinematics.py -- symbolic kinematics of a two-dimensional fluid parcel.
+
+Given a steady planar velocity field u(x, y), v(x, y) written as text, this module
+
+  1. parses it into SymPy expressions,
+  2. derives the velocity gradient L, the strain-rate tensor D, the spin tensor W,
+     the divergence and the vorticity symbolically,
+  3. evaluates them at a parcel center (x0, y0), exactly and in floating point,
+  4. gives the closed-form flow maps of the four local modes of motion
+     (translation, rotation, elongation, shear) and of the full linearized motion,
+  5. advects a square material parcel through the full nonlinear field with RK4.
+
+The same file runs in the browser (through Pyodide) behind the Fluid Parcel
+Kinematics web page, and on its own:
+
+    python kinematics.py --u "y" --v "0" --x0 0 --y0 0 --a 0.8 --T 1.5 --t 0.9
+    python kinematics.py --u "sin(x)cos(y)" --v "-cos(x)sin(y)" --x0 0.8 --y0 0.5 \
+        --a 0.5 --T 2 --t 1.2 --plot figure.png
+
+Conventions
+-----------
+    L_ij  = d u_i / d x_j,  so  L = [[du/dx, du/dy], [dv/dx, dv/dy]]
+    D     = (L + L^T) / 2         (strain rate, symmetric)
+    W     = (L - L^T) / 2         (spin, antisymmetric)
+    div   = du/dx + dv/dy
+    omega = dv/dx - du/dy         (out-of-plane vorticity),  Omega = omega / 2
+    eps_xx = du/dx,  eps_yy = dv/dy,  eps_xy = (du/dy + dv/dx) / 2
+
+Near the center the velocity is u(x0 + xi) ~ u0 + (D + W) xi. Each mode below is the
+exact flow map of one term of that sum, applied to the initial square for time t:
+
+    translation   xi -> xi + u0 t
+    rotation      xi -> R(Omega t) xi
+    elongation    xi -> diag(exp(eps_xx t), exp(eps_yy t)) xi
+    shear         xi -> [[cosh(eps_xy t), sinh(eps_xy t)],
+                         [sinh(eps_xy t), cosh(eps_xy t)]] xi
+
+Requirements: Python 3.9+, sympy, numpy. matplotlib is needed only for --plot.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import sys
+from dataclasses import asdict, dataclass
+from functools import lru_cache
+
+import numpy as np
+import sympy as sp
+from sympy.core.function import AppliedUndef
+from sympy.parsing.sympy_parser import (
+    convert_xor,
+    implicit_multiplication,
+    parse_expr,
+    standard_transformations,
+)
+
+__version__ = "1.0.0"
+
+# --------------------------------------------------------------------------------------
+# Parsing
+# --------------------------------------------------------------------------------------
+
+x, y = sp.symbols("x y", real=True)
+
+#: Names accepted in velocity expressions. Anything else is reported as an error.
+ALLOWED_NAMES = {
+    "x": x,
+    "y": y,
+    "r": sp.sqrt(x**2 + y**2),
+    "theta": sp.atan2(y, x),
+    "pi": sp.pi,
+    "e": sp.E,
+    "sin": sp.sin, "cos": sp.cos, "tan": sp.tan,
+    "asin": sp.asin, "acos": sp.acos, "atan": sp.atan, "atan2": sp.atan2,
+    "sinh": sp.sinh, "cosh": sp.cosh, "tanh": sp.tanh,
+    "exp": sp.exp, "ln": sp.log, "log": sp.log, "sqrt": sp.sqrt,
+    "abs": sp.Abs, "sign": sp.sign,
+}
+
+_TRANSFORMS = standard_transformations + (implicit_multiplication, convert_xor)
+
+
+def parse_component(src: str, name: str = "u") -> sp.Expr:
+    """Parse one velocity component, e.g. ``"0.5 + 2x - y^2"`` or ``"sin(x)cos(y)"``.
+
+    ``^`` means power and juxtaposition means multiplication (``2x``, ``sin(x)cos(y)``).
+    Only ``x``, ``y``, ``r``, ``theta``, ``pi``, ``e`` and the functions in
+    ``ALLOWED_NAMES`` are accepted. Raises ``ValueError`` with a readable message.
+    """
+    text = (src or "").strip()
+    if not text:
+        raise ValueError(f"Enter an expression for {name}.")
+    for a, b in (("−", "-"), ("–", "-"), ("×", "*"), ("·", "*")):
+        text = text.replace(a, b)
+    try:
+        expr = parse_expr(text, local_dict=dict(ALLOWED_NAMES), transformations=_TRANSFORMS)
+        expr = sp.sympify(expr)
+    except Exception as exc:  # SyntaxError, TypeError, TokenError, ...
+        raise ValueError(f"{name}: could not read \"{text}\" ({type(exc).__name__}). "
+                         "Check brackets and write products as x*y.") from None
+    if not isinstance(expr, sp.Expr):
+        raise ValueError(f"{name}: \"{text}\" is not a numeric expression.")
+    unknown = expr.free_symbols - {x, y}
+    if unknown:
+        names = ", ".join(sorted(str(s) for s in unknown))
+        raise ValueError(f"{name}: unknown name {names}. Use x and y, and write x*y rather than xy.")
+    undefined = expr.atoms(AppliedUndef)
+    if undefined:
+        names = ", ".join(sorted({str(f.func) for f in undefined}))
+        raise ValueError(f"{name}: unknown function {names}.")
+    if expr.has(sp.I):
+        raise ValueError(f"{name}: the expression is complex. Use a real-valued field.")
+    return expr
+
+
+def _tidy(expr: sp.Expr) -> sp.Expr:
+    """Simplify small expressions fully; only cancel large ones (keeps runtime bounded)."""
+    try:
+        if sp.count_ops(expr) <= 80:
+            return sp.simplify(expr)
+        return sp.cancel(sp.together(expr))
+    except Exception:
+        return expr
+
+
+# --------------------------------------------------------------------------------------
+# Symbolic kinematics
+# --------------------------------------------------------------------------------------
+
+@dataclass
+class SymbolicKinematics:
+    """Velocity field and its derived kinematic tensors as SymPy objects."""
+    u: sp.Expr
+    v: sp.Expr
+    L: sp.Matrix      # velocity gradient
+    D: sp.Matrix      # strain rate
+    W: sp.Matrix      # spin
+    div: sp.Expr      # divergence
+    omega: sp.Expr    # vorticity (z component)
+
+
+def symbolic_kinematics(u_src: str, v_src: str) -> SymbolicKinematics:
+    """Parse ``u_src`` and ``v_src`` and derive L, D, W, divergence and vorticity."""
+    return _symbolic_cached(str(u_src), str(v_src))
+
+
+@lru_cache(maxsize=64)
+def _symbolic_cached(u_src: str, v_src: str) -> SymbolicKinematics:
+    u = parse_component(u_src, "u")
+    v = parse_component(v_src, "v")
+    L = sp.Matrix([[sp.diff(u, x), sp.diff(u, y)],
+                   [sp.diff(v, x), sp.diff(v, y)]]).applyfunc(_tidy)
+    D = ((L + L.T) / 2).applyfunc(_tidy)
+    W = ((L - L.T) / 2).applyfunc(_tidy)
+    div = _tidy(L[0, 0] + L[1, 1])
+    omega = _tidy(L[1, 0] - L[0, 1])
+    return SymbolicKinematics(u=u, v=v, L=L, D=D, W=W, div=div, omega=omega)
+
+
+# --------------------------------------------------------------------------------------
+# Values at the parcel center
+# --------------------------------------------------------------------------------------
+
+@dataclass
+class PointKinematics:
+    """Kinematic quantities evaluated at (x0, y0). NaN where the field is undefined."""
+    x0: float
+    y0: float
+    u0: float
+    v0: float
+    ux: float
+    uy: float
+    vx: float
+    vy: float
+    exx: float        # eps_xx
+    eyy: float        # eps_yy
+    exy: float        # eps_xy
+    Omega: float      # angular velocity = omega / 2
+    div: float
+    omega: float
+    lam1: float       # principal strain rates, lam1 >= lam2
+    lam2: float
+    phi_deg: float    # angle of the lam1 principal axis from the x axis, degrees
+    gamma_max: float  # maximum shear strain rate = (lam1 - lam2) / 2
+
+
+def _rational(value: float) -> sp.Rational:
+    """Exact rational for a decimal input, e.g. 0.8 -> 4/5 (uses the shortest repr)."""
+    return sp.Rational(repr(float(value)))
+
+
+def _evaluate(expr: sp.Expr, X0: sp.Rational, Y0: sp.Rational) -> float:
+    try:
+        z = complex(sp.N(expr.subs({x: X0, y: Y0}), 17))
+    except Exception:
+        return math.nan
+    if not (math.isfinite(z.real) and math.isfinite(z.imag)):
+        return math.nan
+    if abs(z.imag) > 1e-12 * max(1.0, abs(z.real)):
+        return math.nan
+    return z.real
+
+
+def point_kinematics(sym: SymbolicKinematics, x0: float, y0: float) -> PointKinematics:
+    """Evaluate the symbolic results at (x0, y0) to double precision."""
+    X0, Y0 = _rational(x0), _rational(y0)
+    ev = lambda e: _evaluate(e, X0, Y0)
+    u0, v0 = ev(sym.u), ev(sym.v)
+    ux, uy, vx, vy = (ev(sym.L[i, j]) for i, j in ((0, 0), (0, 1), (1, 0), (1, 1)))
+    exx, eyy, exy = ux, vy, ev(sym.D[0, 1])
+    m, R = 0.5 * (exx + eyy), math.hypot(0.5 * (exx - eyy), exy)
+    phi = 0.5 * math.degrees(math.atan2(2 * exy, exx - eyy)) if R > 0 else 0.0
+    omega = ev(sym.omega)
+    return PointKinematics(
+        x0=float(x0), y0=float(y0), u0=u0, v0=v0, ux=ux, uy=uy, vx=vx, vy=vy,
+        exx=exx, eyy=eyy, exy=exy, Omega=0.5 * omega, div=ev(sym.div), omega=omega,
+        lam1=m + R, lam2=m - R, phi_deg=phi, gamma_max=R,
+    )
+
+
+def exact_at_point(sym: SymbolicKinematics, x0: float, y0: float) -> dict:
+    """Exact (symbolic) values at (x0, y0), e.g. omega = -2*cos(4/5)*cos(1/2)."""
+    sub = {x: _rational(x0), y: _rational(y0)}
+    out = {}
+    for name, expr in (("u", sym.u), ("v", sym.v), ("div", sym.div), ("omega", sym.omega)):
+        try:
+            out[name] = _tidy(expr.subs(sub))
+        except Exception:
+            out[name] = sp.nan
+    out["L"] = sym.L.subs(sub).applyfunc(_tidy)
+    return out
+
+
+# --------------------------------------------------------------------------------------
+# Flow maps of the four modes and of the linearized motion
+# --------------------------------------------------------------------------------------
+
+def mode_maps(pk: PointKinematics, t: float) -> dict:
+    """Closed-form maps xi -> M xi + c of the four modes at time t (xi relative to center)."""
+    th, g = pk.Omega * t, pk.exy * t
+    zero = np.zeros(2)
+    return {
+        "translation": (np.eye(2), np.array([pk.u0 * t, pk.v0 * t])),
+        "rotation": (np.array([[math.cos(th), -math.sin(th)], [math.sin(th), math.cos(th)]]), zero),
+        "elongation": (np.diag([math.exp(pk.exx * t), math.exp(pk.eyy * t)]), zero.copy()),
+        "shear": (np.array([[math.cosh(g), math.sinh(g)], [math.sinh(g), math.cosh(g)]]), zero.copy()),
+    }
+
+
+def expm(A) -> np.ndarray:
+    """Matrix exponential by scaling and squaring with an 18-term Taylor series."""
+    A = np.asarray(A, dtype=float)
+    n = A.shape[0]
+    if not np.all(np.isfinite(A)):
+        return np.full((n, n), np.nan)
+    norm = float(np.abs(A).sum(axis=1).max()) if A.size else 0.0
+    s = max(0, int(math.ceil(math.log2(norm))) + 1) if norm > 0 else 0
+    X = A / 2.0**s
+    E, T = np.eye(n), np.eye(n)
+    for k in range(1, 19):
+        T = T @ X / k
+        E = E + T
+    for _ in range(s):
+        E = E @ E
+    return E
+
+
+def linear_flow_map(pk: PointKinematics, t: float):
+    """Exact flow map of the linearized field u0 + L xi: returns (M, c) with xi -> M xi + c."""
+    A = np.array([[pk.ux, pk.uy, pk.u0],
+                  [pk.vx, pk.vy, pk.v0],
+                  [0.0, 0.0, 0.0]]) * t
+    E = expm(A)
+    return E[:2, :2], E[:2, 2]
+
+
+# --------------------------------------------------------------------------------------
+# Numerical field, material parcel and RK4 advection
+# --------------------------------------------------------------------------------------
+
+def _vectorize(expr: sp.Expr):
+    f = sp.lambdify((x, y), expr, modules="numpy")
+
+    def g(X, Y):
+        X = np.asarray(X, dtype=float)
+        Y = np.asarray(Y, dtype=float)
+        with np.errstate(all="ignore"):
+            out = np.asarray(f(X, Y))
+        if np.iscomplexobj(out):
+            out = np.where(np.abs(out.imag) < 1e-12, out.real, np.nan)
+        return np.broadcast_to(out.astype(float), np.broadcast(X, Y).shape).copy()
+
+    return g
+
+
+@lru_cache(maxsize=64)
+def _numeric_cached(u_src: str, v_src: str):
+    sym = symbolic_kinematics(u_src, v_src)
+    return {"u": _vectorize(sym.u), "v": _vectorize(sym.v),
+            "div": _vectorize(sym.div), "omega": _vectorize(sym.omega)}
+
+
+def numeric_field(u_src: str, v_src: str):
+    """Vectorized velocity F(P) for points P of shape (..., 2); returns the same shape."""
+    fns = _numeric_cached(str(u_src), str(v_src))
+    fu, fv = fns["u"], fns["v"]
+
+    def F(P):
+        return np.stack([fu(P[..., 0], P[..., 1]), fv(P[..., 0], P[..., 1])], axis=-1)
+
+    return F
+
+
+def square_parcel(x0: float, y0: float, a: float, nb: int = 48, ndiv: int = 5, ni: int = 32):
+    """Material points of a square of side ``a`` centered at (x0, y0).
+
+    Returns ``(points, lines, center)``: ``points`` has shape (N, 2); ``lines`` is a list
+    of dicts ``{"offset", "n", "closed"}`` describing polylines (the first is the closed
+    boundary, then ``ndiv - 1`` interior lines in each direction); ``center`` is the index
+    of the center point (the last point).
+    """
+    h = a / 2.0
+    corners = [(-h, -h), (h, -h), (h, h), (-h, h)]
+    pts, lines = [], []
+    for e in range(4):
+        (ax, ay), (bx, by) = corners[e], corners[(e + 1) % 4]
+        for j in range(nb):
+            s = j / nb
+            pts.append((x0 + ax + (bx - ax) * s, y0 + ay + (by - ay) * s))
+    lines.append({"offset": 0, "n": 4 * nb, "closed": True})
+    for i in range(1, ndiv):
+        c = -h + a * i / ndiv
+        off = len(pts)
+        pts.extend((x0 + c, y0 - h + a * j / ni) for j in range(ni + 1))
+        lines.append({"offset": off, "n": ni + 1, "closed": False})
+        off = len(pts)
+        pts.extend((x0 - h + a * j / ni, y0 + c) for j in range(ni + 1))
+        lines.append({"offset": off, "n": ni + 1, "closed": False})
+    center = len(pts)
+    pts.append((x0, y0))
+    return np.array(pts, dtype=float), lines, center
+
+
+def advect(F, points, T: float, nframes: int = 240, substeps: int = 3, blowup: float = 1e6):
+    """Integrate dX/dt = F(X) with classical RK4 from t = 0 to T.
+
+    Returns an array of shape (nframes + 1, N, 2) holding positions at t = k T / nframes.
+    Points that leave the domain of definition or exceed ``blowup`` become NaN.
+    """
+    P = np.array(points, dtype=float)
+    frames = np.empty((nframes + 1,) + P.shape)
+    frames[0] = P
+    dt = T / (nframes * substeps)
+    with np.errstate(all="ignore"):
+        for k in range(1, nframes + 1):
+            for _ in range(substeps):
+                k1 = F(P)
+                k2 = F(P + 0.5 * dt * k1)
+                k3 = F(P + 0.5 * dt * k2)
+                k4 = F(P + dt * k3)
+                P = P + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+            bad = ~np.isfinite(P).all(axis=1) | (np.abs(P) > blowup).any(axis=1)
+            P[bad] = np.nan
+            frames[k] = P
+    return frames
+
+
+def simulate(u_src: str, v_src: str, x0: float, y0: float, a: float, T: float,
+             nframes: int = 240, substeps: int = 3):
+    """Advect the square parcel; returns ``(frames, lines, center)`` (see square_parcel)."""
+    pts, lines, center = square_parcel(x0, y0, a)
+    frames = advect(numeric_field(u_src, v_src), pts, T, nframes, substeps)
+    return frames, lines, center
+
+
+def grid_centers(half_width: float, n: int):
+    """Cell-center grid on [-h, h]^2; row 0 is the top (largest y), as drawn on screen."""
+    c = -half_width + (np.arange(n) + 0.5) * (2.0 * half_width / n)
+    return np.meshgrid(c, c[::-1])
+
+
+def velocity_grid(u_src: str, v_src: str, half_width: float, n: int) -> np.ndarray:
+    """Velocity on an n x n grid: array of shape (n, n, 2)."""
+    X, Y = grid_centers(half_width, n)
+    fns = _numeric_cached(str(u_src), str(v_src))
+    return np.stack([fns["u"](X, Y), fns["v"](X, Y)], axis=-1)
+
+
+def scalar_grid(u_src: str, v_src: str, kind: str, half_width: float, n: int) -> np.ndarray:
+    """``kind`` in {'vorticity', 'divergence', 'speed'} on an n x n grid, from exact derivatives."""
+    X, Y = grid_centers(half_width, n)
+    fns = _numeric_cached(str(u_src), str(v_src))
+    if kind == "vorticity":
+        return fns["omega"](X, Y)
+    if kind == "divergence":
+        return fns["div"](X, Y)
+    if kind == "speed":
+        return np.hypot(fns["u"](X, Y), fns["v"](X, Y))
+    raise ValueError(f"unknown kind {kind!r}")
+
+
+# --------------------------------------------------------------------------------------
+# Reporting
+# --------------------------------------------------------------------------------------
+
+def _text(expr) -> str:
+    return sp.sstr(expr).replace("**", "^")
+
+
+def versions() -> dict:
+    return {
+        "kinematics": __version__,
+        "sympy": sp.__version__,
+        "numpy": np.__version__,
+        "python": sys.version.split()[0],
+        "platform": "pyodide" if sys.platform == "emscripten" else sys.platform,
+    }
+
+
+def report(u_src: str, v_src: str, x0: float, y0: float, a: float = 0.5,
+           T: float = 1.0, t: float | None = None) -> str:
+    """Plain-text summary of the symbolic and point results (used by the CLI)."""
+    sym = symbolic_kinematics(u_src, v_src)
+    pk = point_kinematics(sym, x0, y0)
+    ex = exact_at_point(sym, x0, y0)
+    t = T if t is None else t
+    f = lambda v: f"{v:.6g}"
+    lines = [
+        f"Field      u = {_text(sym.u)}",
+        f"           v = {_text(sym.v)}",
+        "",
+        "Symbolic (any x, y)",
+        f"  du/dx = {_text(sym.L[0, 0])}    du/dy = {_text(sym.L[0, 1])}",
+        f"  dv/dx = {_text(sym.L[1, 0])}    dv/dy = {_text(sym.L[1, 1])}",
+        f"  eps_xy = {_text(sym.D[0, 1])}",
+        f"  div    = {_text(sym.div)}",
+        f"  omega  = {_text(sym.omega)}",
+        "",
+        f"At (x0, y0) = ({x0:g}, {y0:g})",
+        f"  u0, v0          = {f(pk.u0)}, {f(pk.v0)}    (exact: {_text(ex['u'])}, {_text(ex['v'])})",
+        f"  L               = [[{f(pk.ux)}, {f(pk.uy)}], [{f(pk.vx)}, {f(pk.vy)}]]",
+        f"  div             = {f(pk.div)}    (exact: {_text(ex['div'])})",
+        f"  omega           = {f(pk.omega)}    (exact: {_text(ex['omega'])})",
+        f"  Omega           = {f(pk.Omega)}",
+        f"  eps_xx, eps_yy  = {f(pk.exx)}, {f(pk.eyy)}",
+        f"  eps_xy          = {f(pk.exy)}",
+        f"  lam1, lam2      = {f(pk.lam1)}, {f(pk.lam2)}   axis {pk.phi_deg:.3f} deg",
+        f"  max shear rate  = {f(pk.gamma_max)}",
+        "",
+        f"Modes at t = {t:g} (parcel side a = {a:g})",
+        f"  translation  dx, dy = {f(pk.u0 * t)}, {f(pk.v0 * t)}",
+        f"  rotation     theta  = {math.degrees(pk.Omega * t):.4f} deg",
+        f"  elongation   x-edge x{math.exp(pk.exx * t):.6g}, y-edge x{math.exp(pk.eyy * t):.6g}",
+        f"  shear        corner angle = {shear_corner_angle(pk, t):.4f} deg",
+        "",
+        "Versions: " + ", ".join(f"{k} {v}" for k, v in versions().items()),
+    ]
+    return "\n".join(lines)
+
+
+def shear_corner_angle(pk: PointKinematics, t: float) -> float:
+    """Angle (degrees) between the images of the x and y edges under the shear mode."""
+    g = pk.exy * t
+    c, s = math.cosh(g), math.sinh(g)
+    return math.degrees(math.acos(max(-1.0, min(1.0, 2 * c * s / (c * c + s * s)))))
+
+
+# --------------------------------------------------------------------------------------
+# Browser bridge (called from the web page through Pyodide)
+# --------------------------------------------------------------------------------------
+
+def _clean(v):
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    return v
+
+
+def web_analyze(u_src: str, v_src: str, x0: float, y0: float) -> str:
+    """JSON with LaTeX/text of the symbolic results, point values and versions."""
+    try:
+        sym = symbolic_kinematics(u_src, v_src)
+        pk = point_kinematics(sym, float(x0), float(y0))
+        ex = exact_at_point(sym, float(x0), float(y0))
+    except ValueError as exc:
+        return json.dumps({"error": str(exc)})
+    latex = {
+        "u": sp.latex(sym.u), "v": sp.latex(sym.v),
+        "L": sp.latex(sym.L), "D": sp.latex(sym.D), "W": sp.latex(sym.W),
+        "div": sp.latex(sym.div), "omega": sp.latex(sym.omega),
+        "exact_div": sp.latex(ex["div"]), "exact_omega": sp.latex(ex["omega"]),
+        "exact_u": sp.latex(ex["u"]), "exact_v": sp.latex(ex["v"]),
+        "exact_L": sp.latex(ex["L"]),
+    }
+    text = {"u": _text(sym.u), "v": _text(sym.v), "L": _text(sym.L.tolist()),
+            "D": _text(sym.D.tolist()), "W": _text(sym.W.tolist()),
+            "div": _text(sym.div), "omega": _text(sym.omega)}
+    point = {k: _clean(v) for k, v in asdict(pk).items()}
+    return json.dumps({"latex": latex, "text": text, "point": point, "versions": versions()})
+
+
+def web_layout(x0: float, y0: float, a: float) -> str:
+    _, lines, center = square_parcel(float(x0), float(y0), float(a))
+    return json.dumps({"lines": lines, "center": center})
+
+
+def web_advect(u_src, v_src, x0, y0, a, T, nframes) -> np.ndarray:
+    frames, _, _ = simulate(u_src, v_src, float(x0), float(y0), float(a), float(T), int(nframes))
+    return np.ascontiguousarray(frames.ravel(), dtype=np.float64)
+
+
+def web_velocity_grid(u_src, v_src, half_width, n) -> np.ndarray:
+    return np.ascontiguousarray(velocity_grid(u_src, v_src, float(half_width), int(n)).ravel(),
+                                dtype=np.float64)
+
+
+def web_scalar_grid(u_src, v_src, kind, half_width, n) -> np.ndarray:
+    return np.ascontiguousarray(scalar_grid(u_src, v_src, str(kind), float(half_width), int(n)).ravel(),
+                                dtype=np.float64)
+
+
+# --------------------------------------------------------------------------------------
+# Figure (optional, needs matplotlib)
+# --------------------------------------------------------------------------------------
+
+def plot_summary(u_src, v_src, x0, y0, a, T, t, half_width, path):
+    """Save a figure with the advected parcel and the four mode panels at time t."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    sym = symbolic_kinematics(u_src, v_src)
+    pk = point_kinematics(sym, x0, y0)
+    nframes = 240
+    frames, lines, center = simulate(u_src, v_src, x0, y0, a, T, nframes)
+    k = int(round(min(max(t / T, 0.0), 1.0) * nframes))
+    dye, ghost = "#c42a5e", "0.45"
+
+    fig = plt.figure(figsize=(12, 9))
+    gs = fig.add_gridspec(2, 4, height_ratios=[2.1, 1])
+    ax = fig.add_subplot(gs[0, 0:2])
+    n = 17
+    X, Y = grid_centers(half_width, n)
+    V = velocity_grid(u_src, v_src, half_width, n)
+    ax.quiver(X, Y, V[..., 0], V[..., 1], color="#2a6a8a", alpha=0.8)
+    b = lines[0]
+    sq0 = frames[0, b["offset"]:b["offset"] + b["n"]]
+    ax.fill(*np.vstack([sq0, sq0[:1]]).T, fill=False, ls="--", color=ghost)
+    for ln in lines[1:]:
+        seg = frames[k, ln["offset"]:ln["offset"] + ln["n"]]
+        ax.plot(seg[:, 0], seg[:, 1], color=dye, lw=0.6, alpha=0.6)
+    sq = frames[k, b["offset"]:b["offset"] + b["n"]]
+    ax.fill(*np.vstack([sq, sq[:1]]).T, color=dye, alpha=0.18, lw=0)
+    ax.plot(*np.vstack([sq, sq[:1]]).T, color=dye, lw=2)
+    M, c = linear_flow_map(pk, t)
+    lin = (sq0 - [x0, y0]) @ M.T + c + [x0, y0]
+    ax.plot(*np.vstack([lin, lin[:1]]).T, ":", color="k", lw=1.2)
+    ax.plot(frames[:k + 1, center, 0], frames[:k + 1, center, 1], color=dye, lw=1, alpha=0.6)
+    ax.set_xlim(-half_width, half_width)
+    ax.set_ylim(-half_width, half_width)
+    ax.set_aspect("equal")
+    ax.set_title(f"u = {_text(sym.u)},  v = {_text(sym.v)}    t = {t:g}")
+
+    axt = fig.add_subplot(gs[0, 2:4])
+    axt.axis("off")
+    axt.text(0, 1, report(u_src, v_src, x0, y0, a, T, t), va="top", family="monospace", fontsize=7.5)
+
+    h = a / 2
+    corners = np.array([[-h, -h], [h, -h], [h, h], [-h, h], [-h, -h]])
+    titles = {"translation": "(a) translation", "rotation": "(b) rotation",
+              "elongation": "(c) elongation", "shear": "(d) shear"}
+    for i, (name, (Mm, cm)) in enumerate(mode_maps(pk, t).items()):
+        axm = fig.add_subplot(gs[1, i])
+        img = corners @ Mm.T + cm
+        axm.plot(corners[:, 0], corners[:, 1], "--", color=ghost)
+        axm.fill(img[:, 0], img[:, 1], color=dye, alpha=0.18, lw=0)
+        axm.plot(img[:, 0], img[:, 1], color=dye, lw=2)
+        axm.plot(img[1:3, 0], img[1:3, 1], color="k", lw=2.5)
+        axm.set_aspect("equal")
+        axm.set_title(titles[name])
+        axm.margins(0.2)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+# --------------------------------------------------------------------------------------
+# Command line
+# --------------------------------------------------------------------------------------
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description="Symbolic kinematics of a 2D fluid parcel.")
+    p.add_argument("--u", required=True, help='u(x, y), e.g. "0.5 + 0.4x + 0.8y"')
+    p.add_argument("--v", required=True, help='v(x, y), e.g. "0.2 - 0.2x - 0.4y"')
+    p.add_argument("--x0", type=float, default=0.0)
+    p.add_argument("--y0", type=float, default=0.0)
+    p.add_argument("--a", type=float, default=0.5, help="parcel side length")
+    p.add_argument("--T", type=float, default=1.0, help="duration of the advection")
+    p.add_argument("--t", type=float, default=None, help="time to report (default T)")
+    p.add_argument("--half-width", type=float, default=2.0, help="plot half-width")
+    p.add_argument("--json", metavar="FILE", help="write point values and parcel frames to JSON")
+    p.add_argument("--plot", metavar="FILE", help="save a summary figure (needs matplotlib)")
+    args = p.parse_args(argv)
+    t = args.T if args.t is None else args.t
+    try:
+        print(report(args.u, args.v, args.x0, args.y0, args.a, args.T, t))
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.json:
+        frames, lines, center = simulate(args.u, args.v, args.x0, args.y0, args.a, args.T)
+        meta = json.loads(web_analyze(args.u, args.v, args.x0, args.y0))
+        meta.update({"inputs": vars(args), "lines": lines, "center": center,
+                     "frames": np.where(np.isfinite(frames), frames, None).tolist()})
+        with open(args.json, "w") as fh:
+            json.dump(meta, fh)
+        print(f"wrote {args.json}")
+    if args.plot:
+        plot_summary(args.u, args.v, args.x0, args.y0, args.a, args.T, t, args.half_width, args.plot)
+        print(f"wrote {args.plot}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+</script>
+<!-- END kinematics.py -->
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const PYODIDE_INDEX="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+
+const PRESETS=[
+  {n:'General linear',u:'0.5 + 0.4x + 0.8y',v:'0.2 - 0.2x - 0.4y',x0:0,y0:0,a:0.8,L:2,T:1.6},
+  {n:'Uniform flow',u:'1',v:'0.5',x0:-0.8,y0:-0.4,a:0.6,L:2,T:1.5},
+  {n:'Simple shear',u:'y',v:'0',x0:0,y0:0,a:0.8,L:2,T:1.5},
+  {n:'Solid-body rotation',u:'-y',v:'x',x0:1,y0:0,a:0.5,L:2,T:1.5},
+  {n:'Pure strain',u:'x',v:'-y',x0:0,y0:0,a:0.7,L:2,T:0.8},
+  {n:'Uniform expansion',u:'0.5x',v:'0.5y',x0:0.6,y0:0.4,a:0.5,L:2,T:1.2},
+  {n:'Point vortex',u:'-y/r^2',v:'x/r^2',x0:1,y0:0,a:0.4,L:2,T:1.2},
+  {n:'Taylor–Green',u:'sin(x)cos(y)',v:'-cos(x)sin(y)',x0:0.8,y0:0.5,a:0.5,L:3.2,T:2},
+  {n:'Channel (Poiseuille)',u:'1 - y^2',v:'0',x0:-1.2,y0:0.5,a:0.4,L:1.5,T:1.5},
+  {n:'Source flow',u:'x/r^2',v:'y/r^2',x0:0.8,y0:0.6,a:0.4,L:2,T:0.6},
+];
+const NF=240, NQ=17, NSHADE=110;
+const PY_SRC=document.getElementById('kinematics-src').textContent.replace(/^\n/,'');
+$('pySrcView').textContent=PY_SRC;
+try{$('dlPy').href=URL.createObjectURL(new Blob([PY_SRC],{type:'text/x-python'}));$('dlPy').download='kinematics.py'}catch(e){}
+$('copyPy').addEventListener('click',()=>{const b=$('copyPy');
+  try{navigator.clipboard.writeText(PY_SRC).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy source',1500)},()=>{b.textContent='Copy failed; open the source below'})}catch(e){b.textContent='Copy failed; open the source below'}});
+
+const S={py:null,F:null,ready:false,u:'',v:'',x0:0,y0:0,a:1,L:2,T:0,t:0,K:null,meta:null,
+  frames:[],lines:[],nc:0,quiver:null,shade:null,shadeKind:'vorticity',shadeMax:null,shadeCanvas:null,
+  ext:{},playing:false,lin:true};
+let C={};
+
+/* ---------- status ---------- */
+function status(text,state='busy'){$('statusText').textContent=text;$('status').dataset.state=state}
+function showError(msg){$('err').textContent=msg;$('err').hidden=!msg}
+
+/* ---------- Python engine ---------- */
+async function boot(){
+  try{
+    if(typeof loadPyodide!=='function') throw new Error('Pyodide could not be downloaded. Check your connection and reload the page.');
+    status('Loading Pyodide…');
+    const py=await loadPyodide({indexURL:PYODIDE_INDEX});
+    status('Loading NumPy and SymPy…');
+    await py.loadPackage(['numpy','sympy']);
+    status('Loading kinematics.py…');
+    const src=PY_SRC;
+    py.FS.writeFile('/home/pyodide/kinematics.py',src);
+    py.runPython("import sys\nif '/home/pyodide' not in sys.path: sys.path.insert(0, '/home/pyodide')");
+    const mod=py.pyimport('kinematics');
+    S.F={analyze:mod.web_analyze,layout:mod.web_layout,advect:mod.web_advect,vel:mod.web_velocity_grid,scalar:mod.web_scalar_grid};
+    S.py=py;S.ready=true;$('overlay').hidden=true;
+    recompute();
+  }catch(e){status('Python engine failed to load','error');
+    $('overlay').querySelector('strong').textContent='The Python engine did not load';$('overlayText').textContent=e.message||String(e);}
+}
+function toF64(proxy){const b=proxy.getBuffer('f64');const a=b.data.slice();b.release();proxy.destroy();return a}
+function pyError(e){const m=String(e&&e.message||e).trim().split('\n').filter(Boolean);return m[m.length-1]||'Python error'}
+
+/* ---------- compute ---------- */
+const num=(id,def,min)=>{const v=parseFloat($(id).value);return isFinite(v)&&(min==null||v>=min)?v:def};
+const nz=v=>v==null?NaN:v;
+function recompute(){
+  if(!S.ready)return;
+  status('Computing…');
+  setTimeout(()=>{
+    const t0=performance.now();
+    try{
+      const u=$('uIn').value,v=$('vIn').value;
+      const x0=num('x0',0),y0=num('y0',0),a=num('side',.5,1e-3),L=num('extent',2,1e-3),T=num('dur',1,1e-3);
+      const meta=JSON.parse(S.F.analyze(u,v,x0,y0));
+      if(meta.error){showError(meta.error);status('Fix the expression to continue','error');return}
+      const p=meta.point;
+      const K={u0:nz(p.u0),v0:nz(p.v0),ux:nz(p.ux),uy:nz(p.uy),vx:nz(p.vx),vy:nz(p.vy),exx:nz(p.exx),eyy:nz(p.eyy),exy:nz(p.exy),
+        Om:nz(p.Omega),div:nz(p.div),w:nz(p.omega),lam1:nz(p.lam1),lam2:nz(p.lam2),phi:nz(p.phi_deg),gmax:nz(p.gamma_max)};
+      const layout=JSON.parse(S.F.layout(x0,y0,a));
+      const flat=toF64(S.F.advect(u,v,x0,y0,a,T,NF));
+      const N2=(layout.center+1)*2,frames=[];for(let f=0;f<=NF;f++)frames.push(flat.subarray(f*N2,(f+1)*N2));
+      const frac=S.T?S.t/S.T:0.6;
+      Object.assign(S,{u,v,x0,y0,a,L,T,K,meta,frames,lines:layout.lines.map(l=>({o:l.offset,n:l.n,closed:l.closed})),nc:layout.center});
+      S.t=Math.min(Math.max(frac,0),1)*T;
+      fetchView();
+      showError(isFinite(K.u0)&&isFinite(K.ux)&&isFinite(K.vy)?'':'The field is undefined at the parcel center. Move the parcel away from the singular point.');
+      computeExtents();updateSymbolic();updateQuant();updateCode();render();
+      status(`Ready · computed in ${Math.round(performance.now()-t0)} ms`,'ready');
+    }catch(e){showError(pyError(e));status('Computation failed','error')}
+  },16);
+}
+function fetchView(){
+  S.quiver=toF64(S.F.vel(S.u,S.v,S.L,NQ));
+  if(S.shadeKind==='none'){S.shade=null}else{S.shade=toF64(S.F.scalar(S.u,S.v,S.shadeKind,S.L,NSHADE))}
+  buildShade();
+}
+let deb;const soon=()=>{clearTimeout(deb);deb=setTimeout(recompute,350)};
+
+/* ---------- colors ---------- */
+function readColors(){const cs=getComputedStyle(document.documentElement);
+  for(const k of ['surface','ink','muted','line','soft','dye','flow','pos','neg'])C[k]=cs.getPropertyValue('--'+k).trim();
+  C.mono=cs.getPropertyValue('--f-mono').trim()||'monospace';}
+function rgb(hex){hex=hex.replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');const n=parseInt(hex,16);return [(n>>16)&255,(n>>8)&255,n&255]}
+function rgba(hex,a){const [r,g,b]=rgb(hex);return `rgba(${r},${g},${b},${a})`}
+const fmt=v=>{if(!isFinite(v))return '—';if(Math.abs(v)<5e-9)return '0';
+  const a=Math.abs(v);const s=(a>=1e4||a<1e-3)?v.toExponential(2):String(Number(v.toPrecision(3)));return s.replace('-','−')};
+const fmtf=(v,d=2)=>!isFinite(v)?'—':(Math.abs(v)<0.5*10**-d?(0).toFixed(d):v.toFixed(d)).replace('-','−');
+
+/* ---------- linear-algebra helpers (mirror kinematics.mode_maps / linear_flow_map) ---------- */
+function matmul(A,B){const n=A.length,R=[];for(let i=0;i<n;i++){R.push([]);for(let j=0;j<n;j++){let s=0;for(let k=0;k<n;k++)s+=A[i][k]*B[k][j];R[i].push(s)}}return R}
+function expm(A){const n=A.length;if(A.flat().some(v=>!isFinite(v)))return A.map(r=>r.map(()=>NaN));
+  let nrm=0;for(const r of A)nrm=Math.max(nrm,r.reduce((s,v)=>s+Math.abs(v),0));
+  const sq=nrm>0?Math.max(0,Math.ceil(Math.log2(nrm))+1):0;const sc=1/2**sq;
+  const X=A.map(r=>r.map(v=>v*sc));const I=A.map((r,i)=>r.map((_,j)=>i===j?1:0));
+  let E=I.map(r=>r.slice()),T=I.map(r=>r.slice());
+  for(let k=1;k<=18;k++){T=matmul(T,X).map(r=>r.map(v=>v/k));E=E.map((r,i)=>r.map((v,j)=>v+T[i][j]))}
+  for(let i=0;i<sq;i++)E=matmul(E,E);return E;}
+function modeMap(kind,t){const K=S.K;
+  switch(kind){
+    case 'trans':return {M:[1,0,0,1],o:[K.u0*t,K.v0*t]};
+    case 'rot':{const th=K.Om*t,c=Math.cos(th),s=Math.sin(th);return {M:[c,-s,s,c],o:[0,0]}}
+    case 'str':return {M:[Math.exp(K.exx*t),0,0,Math.exp(K.eyy*t)],o:[0,0]};
+    case 'shr':{const g=K.exy*t,c=Math.cosh(g),s=Math.sinh(g);return {M:[c,s,s,c],o:[0,0]}}
+  }}
+function modeField(kind){const K=S.K;
+  switch(kind){
+    case 'trans':return ()=>[K.u0,K.v0];
+    case 'rot':return (x,y)=>[-K.Om*y,K.Om*x];
+    case 'str':return (x,y)=>[K.exx*x,K.eyy*y];
+    case 'shr':return (x,y)=>[K.exy*y,K.exy*x];
+  }}
+function computeExtents(){const h=S.a/2,cs=[[-h,-h],[h,-h],[h,h],[-h,h]];
+  for(const kind of ['trans','rot','str','shr']){let xmin=Infinity,xmax=-Infinity,ymin=Infinity,ymax=-Infinity;
+    for(let i=0;i<=12;i++){const {M,o}=modeMap(kind,S.T*i/12);
+      for(const [a,b] of cs){const X=o[0]+M[0]*a+M[1]*b,Y=o[1]+M[2]*a+M[3]*b;
+        if(isFinite(X)&&isFinite(Y)){xmin=Math.min(xmin,X);xmax=Math.max(xmax,X);ymin=Math.min(ymin,Y);ymax=Math.max(ymax,Y)}}}
+    let cx=(xmin+xmax)/2,cy=(ymin+ymax)/2,e=Math.max(xmax-xmin,ymax-ymin)/2*1.18;
+    if(kind!=='trans'){cx=0;cy=0;e=Math.max(Math.abs(xmin),Math.abs(xmax),Math.abs(ymin),Math.abs(ymax))*1.15}
+    if(!isFinite(e))e=S.a;e=Math.min(Math.max(e,S.a*0.78),S.a*40);
+    S.ext[kind]={cx:isFinite(cx)?cx:0,cy:isFinite(cy)?cy:0,e};}}
+
+/* ---------- drawing ---------- */
+function prep(cv){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;
+  const w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));
+  if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}return {ctx:cv.getContext('2d'),w,h,d}}
+function arrow(ctx,x,y,dx,dy,d){const len=Math.hypot(dx,dy);if(len<0.5*d)return;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y+dy);ctx.stroke();
+  const hl=Math.min(6*d,len*.4),ux=dx/len,uy=dy/len;
+  ctx.beginPath();ctx.moveTo(x+dx,y+dy);ctx.lineTo(x+dx-hl*(ux*.92-uy*.42),y+dy-hl*(uy*.92+ux*.42));
+  ctx.lineTo(x+dx-hl*(ux*.92+uy*.42),y+dy-hl*(uy*.92-ux*.42));ctx.closePath();ctx.fill()}
+function niceStep(r){const p=10**Math.floor(Math.log10(r)),m=r/p;return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p}
+function polyline(ctx,arr,o,n,toS,closed){let pen=false,first=false;ctx.beginPath();
+  for(let i=0;i<n;i++){const X=arr[2*(o+i)],Y=arr[2*(o+i)+1];if(!isFinite(X)){pen=false;continue}
+    const [sx,sy]=toS(X,Y);if(!pen){ctx.moveTo(sx,sy);pen=true;if(i===0)first=true}else ctx.lineTo(sx,sy)}
+  if(closed&&first&&pen)ctx.closePath()}
+
+function buildShade(){
+  if(!S.shade){S.shadeCanvas=null;S.shadeMax=null;return}
+  const n=NSHADE,vals=S.shade;
+  const abs=Array.from(vals).filter(isFinite).map(Math.abs).sort((a,b)=>a-b);
+  const vmax=abs.length?abs[Math.floor(abs.length*.97)]:0;
+  const cv=S.shadeCanvas||document.createElement('canvas');cv.width=n;cv.height=n;
+  const g=cv.getContext('2d'),img=g.createImageData(n,n);
+  const base=rgb(C.surface),P=rgb(C.pos),Nn=rgb(C.neg),F=rgb(C.flow),speed=S.shadeKind==='speed';
+  for(let p=0;p<n*n;p++){const v=vals[p];let col=base,a=0;
+    if(isFinite(v)&&vmax>1e-12){if(speed){col=F;a=Math.min(1,v/vmax)*.42}else{col=v>0?P:Nn;a=Math.pow(Math.min(1,Math.abs(v)/vmax),.85)*.36}}
+    for(let c=0;c<3;c++)img.data[4*p+c]=base[c]+(col[c]-base[c])*a;img.data[4*p+3]=255}
+  g.putImageData(img,0,0);S.shadeCanvas=cv;S.shadeMax=vmax>1e-12?vmax:null;
+}
+
+function drawMain(){const cv=$('main'),{ctx,w,h,d}=prep(cv),L=S.L;
+  const toS=(X,Y)=>[(X+L)/(2*L)*w,(L-Y)/(2*L)*h];
+  ctx.fillStyle=C.surface;ctx.fillRect(0,0,w,h);
+  if(S.shadeCanvas){ctx.imageSmoothingEnabled=true;ctx.drawImage(S.shadeCanvas,0,0,w,h)}
+  const st=niceStep(2*L/6);ctx.lineWidth=1*d;ctx.font=`${10.5*d}px ${C.mono}`;
+  for(let g=Math.ceil(-L/st)*st;g<=L+1e-9;g+=st){const [sx]=toS(g,0),[,sy]=toS(0,g);
+    ctx.strokeStyle=Math.abs(g)<1e-9?C.line:rgba(C.line,.55);
+    ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,h);ctx.stroke();ctx.beginPath();ctx.moveTo(0,sy);ctx.lineTo(w,sy);ctx.stroke();
+    if(Math.abs(g)>1e-9){const lab=String(Number(g.toPrecision(6))).replace('-','−');ctx.fillStyle=C.muted;
+      ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(lab,sx,h-4*d);ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(lab,5*d,sy)}}
+  // quiver (row 0 = top)
+  const q=S.quiver,cell=w/NQ,sp=[];
+  for(let k=0;k<NQ*NQ;k++){const s=Math.hypot(q[2*k],q[2*k+1]);if(isFinite(s))sp.push(s)}
+  sp.sort((a,b)=>a-b);const vref=Math.max(sp.length?sp[Math.floor(sp.length*.9)]:0,1e-12);
+  ctx.strokeStyle=rgba(C.flow,.8);ctx.fillStyle=rgba(C.flow,.8);ctx.lineWidth=1.2*d;
+  for(let k=0;k<NQ*NQ;k++){const u=q[2*k],v=q[2*k+1],s=Math.hypot(u,v);if(!isFinite(s)||s<1e-12)continue;
+    const i=k%NQ,j=Math.floor(k/NQ),len=Math.min(s/vref,1.25)*cell*.78,cx=(i+.5)*cell,cy=(j+.5)*cell;
+    arrow(ctx,cx-u/s*len/2,cy+v/s*len/2,u/s*len,-v/s*len,d)}
+  const fr=Math.round(S.t/S.T*NF),F=S.frames[fr],F0=S.frames[0],B=S.lines[0];
+  ctx.setLineDash([5*d,4*d]);ctx.strokeStyle=C.muted;ctx.lineWidth=1.3*d;polyline(ctx,F0,B.o,B.n,toS,true);ctx.stroke();
+  if(S.lin){const K=S.K,t=S.t;const E=expm([[K.ux*t,K.uy*t,K.u0*t],[K.vx*t,K.vy*t,K.v0*t],[0,0,0]]);
+    const n=B.n,arr=new Float64Array(2*n);
+    for(let i=0;i<n;i++){const a=F0[2*i]-S.x0,b=F0[2*i+1]-S.y0;arr[2*i]=S.x0+E[0][0]*a+E[0][1]*b+E[0][2];arr[2*i+1]=S.y0+E[1][0]*a+E[1][1]*b+E[1][2]}
+    ctx.strokeStyle=rgba(C.ink,.75);ctx.lineWidth=1.4*d;ctx.setLineDash([2*d,3*d]);polyline(ctx,arr,0,n,toS,true);ctx.stroke()}
+  ctx.setLineDash([]);
+  ctx.strokeStyle=rgba(C.dye,.55);ctx.lineWidth=1.3*d;ctx.beginPath();let pen=false;
+  for(let f=0;f<=fr;f++){const X=S.frames[f][2*S.nc],Y=S.frames[f][2*S.nc+1];if(!isFinite(X)){pen=false;continue}const [sx,sy]=toS(X,Y);pen?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);pen=true}ctx.stroke();
+  polyline(ctx,F,B.o,B.n,toS,true);ctx.fillStyle=rgba(C.dye,.16);ctx.fill();
+  ctx.strokeStyle=rgba(C.dye,.6);ctx.lineWidth=1*d;
+  for(const ln of S.lines.slice(1)){polyline(ctx,F,ln.o,ln.n,toS,false);ctx.stroke()}
+  polyline(ctx,F,B.o,B.n,toS,true);ctx.strokeStyle=C.dye;ctx.lineWidth=2.2*d;ctx.stroke();
+  const cx=F[2*S.nc],cy=F[2*S.nc+1];if(isFinite(cx)){const [sx,sy]=toS(cx,cy);ctx.fillStyle=C.dye;ctx.beginPath();ctx.arc(sx,sy,3*d,0,7);ctx.fill()}
+  const [s0x,s0y]=toS(S.x0,S.y0);ctx.strokeStyle=C.ink;ctx.lineWidth=1.3*d;ctx.beginPath();ctx.arc(s0x,s0y,4.5*d,0,7);ctx.stroke()}
+
+function drawMode(kind){const cv=$('m-'+kind),{ctx,w,h,d}=prep(cv),X=S.ext[kind],e=X.e;
+  const toS=(x,y)=>[(x-X.cx+e)/(2*e)*w,(X.cy+e-y)/(2*e)*h];
+  ctx.fillStyle=C.surface;ctx.fillRect(0,0,w,h);
+  const [ox,oy]=toS(0,0);ctx.strokeStyle=C.soft;ctx.lineWidth=1*d;
+  ctx.beginPath();ctx.moveTo(ox,0);ctx.lineTo(ox,h);ctx.moveTo(0,oy);ctx.lineTo(w,oy);ctx.stroke();
+  const fld=modeField(kind),nq=9,cell=w/nq,vs=[];let vmax=0;
+  for(let j=0;j<nq;j++)for(let i=0;i<nq;i++){const x=X.cx-e+(i+.5)*2*e/nq,y=X.cy+e-(j+.5)*2*e/nq,[u,v]=fld(x,y);vs.push([u,v]);if(isFinite(u)&&isFinite(v))vmax=Math.max(vmax,Math.hypot(u,v))}
+  ctx.strokeStyle=rgba(C.flow,.55);ctx.fillStyle=rgba(C.flow,.55);ctx.lineWidth=1.1*d;
+  if(vmax>1e-12)vs.forEach(([u,v],k)=>{const m=Math.hypot(u,v);if(!isFinite(m))return;const i=k%nq,j=Math.floor(k/nq),s=m/vmax*cell*.72;if(s<1)return;
+    arrow(ctx,(i+.5)*cell-u/m*s/2,(j+.5)*cell+v/m*s/2,u/m*s,-v/m*s,d)});
+  const a=S.a/2,cs=[[-a,-a],[a,-a],[a,a],[-a,a]];
+  const path=map=>{ctx.beginPath();cs.forEach((p,i)=>{const [sx,sy]=toS(...map(p));i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy)});ctx.closePath()};
+  ctx.setLineDash([5*d,4*d]);ctx.strokeStyle=C.muted;ctx.lineWidth=1.2*d;path(p=>p);ctx.stroke();ctx.setLineDash([]);
+  const {M,o}=modeMap(kind,S.t),mp=([x,y])=>[o[0]+M[0]*x+M[1]*y,o[1]+M[2]*x+M[3]*y];
+  if(kind==='trans'){ctx.strokeStyle=rgba(C.dye,.55);ctx.lineWidth=1.3*d;const [p0x,p0y]=toS(0,0),[p1x,p1y]=toS(o[0],o[1]);ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.stroke()}
+  path(mp);ctx.fillStyle=rgba(C.dye,.16);ctx.fill();
+  ctx.strokeStyle=rgba(C.dye,.55);ctx.lineWidth=1*d;
+  for(let i=1;i<5;i++){const c=-a+S.a*i/5;
+    for(const [p,q] of [[[c,-a],[c,a]],[[-a,c],[a,c]]]){const [x1,y1]=toS(...mp(p)),[x2,y2]=toS(...mp(q));ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}}
+  path(mp);ctx.strokeStyle=C.dye;ctx.lineWidth=2*d;ctx.stroke();
+  const [m1x,m1y]=toS(...mp([a,-a])),[m2x,m2y]=toS(...mp([a,a]));ctx.strokeStyle=C.ink;ctx.lineWidth=3*d;ctx.beginPath();ctx.moveTo(m1x,m1y);ctx.lineTo(m2x,m2y);ctx.stroke();
+  const [cx,cy]=toS(o[0],o[1]);ctx.fillStyle=C.dye;ctx.beginPath();ctx.arc(cx,cy,2.6*d,0,7);ctx.fill()}
+
+/* ---------- text panels ---------- */
+function updateReadouts(){const K=S.K,t=S.t;
+  $('r-trans').textContent=`Δx = u₀t = ${fmtf(K.u0*t)}\nΔy = v₀t = ${fmtf(K.v0*t)}`;
+  const th=K.Om*t*180/Math.PI;
+  $('r-rot').textContent=`Ω = ${fmt(K.Om)} rad per unit time\nθ = Ωt = ${fmtf(th,1)}° ${Math.abs(th)<.05?'':th>0?'(counterclockwise)':'(clockwise)'}`;
+  const sx=Math.exp(K.exx*t),sy=Math.exp(K.eyy*t);
+  $('r-str').textContent=`x-edge ×${fmtf(sx)}, y-edge ×${fmtf(sy)}\narea ×${fmtf(sx*sy)}  (= e^(∇·u t))`;
+  const g=K.exy*t,c=Math.cosh(g),s=Math.sinh(g),ang=Math.acos(Math.max(-1,Math.min(1,(2*c*s)/(c*c+s*s))))*180/Math.PI;
+  $('r-shr').textContent=`ε_xy = ${fmt(K.exy)}\ncorner angle 90° → ${fmtf(ang,1)}°`;
+  $('tRead').textContent=`t = ${fmtf(t)} of ${fmtf(S.T)}`}
+
+function tex(el,latex,plain){
+  if(window.katex){try{katex.render(latex,el,{displayMode:true,throwOnError:false});el.classList.remove('plain');return}catch(e){}}
+  el.textContent=plain;el.classList.add('plain')}
+function updateSymbolic(){const X=S.meta.latex,T=S.meta.text;
+  tex($('s-uv'),`\\begin{aligned}u&=${X.u}\\\\ v&=${X.v}\\end{aligned}`,`u = ${T.u}\nv = ${T.v}`);
+  tex($('s-L'),`\\nabla\\mathbf{u}=${X.L}`,`L = ${T.L}`);
+  tex($('s-D'),`\\mathbf{D}=${X.D}`,`D = ${T.D}`);
+  tex($('s-W'),`\\mathbf{W}=${X.W}`,`W = ${T.W}`);
+  tex($('s-dw'),`\\begin{aligned}\\nabla\\cdot\\mathbf{u}&=${X.div}\\\\ \\omega&=${X.omega}\\end{aligned}`,`div = ${T.div}\nomega = ${T.omega}`);
+  const pt=`(x_0,y_0)=(${fmtf(S.x0)},\\,${fmtf(S.y0)})`.replace(/−/g,'-');
+  tex($('s-exact'),`\\begin{aligned}&${pt}\\\\ \\mathbf{u}_0&=\\left(${X.exact_u},\\;${X.exact_v}\\right)\\\\ \\nabla\\mathbf{u}&=${X.exact_L}\\\\ \\nabla\\cdot\\mathbf{u}&=${X.exact_div}\\\\ \\omega&=${X.exact_omega}\\end{aligned}`,
+    `at (${S.x0}, ${S.y0}): div = ${fmt(S.K.div)}, omega = ${fmt(S.K.w)}`);}
+
+function updateQuant(){const K=S.K;
+  $('q-u0').textContent=fmt(K.u0);$('q-v0').textContent=fmt(K.v0);$('q-sp').textContent=fmt(Math.hypot(K.u0,K.v0));
+  const set=(p,m)=>m.forEach((v,i)=>$(p+['00','01','10','11'][i]).textContent=fmt(v));
+  set('L',[K.ux,K.uy,K.vx,K.vy]);set('D',[K.exx,K.exy,K.exy,K.eyy]);set('W',[0,-K.Om,K.Om,0]);
+  $('q-div').textContent=fmt(K.div);$('q-w').textContent=fmt(K.w);
+  $('q-lam').textContent=`${fmt(K.lam1)}, ${fmt(K.lam2)}`;
+  $('q-phi').textContent=K.gmax<1e-12?'any':`${fmtf(K.phi,1)}°`;
+  $('q-gmax').textContent=fmt(K.gmax);
+  const sc=1e-9*(1+Math.hypot(K.ux,K.uy,K.vx,K.vy));
+  const inc=Math.abs(K.div)<sc,irr=Math.abs(K.w)<sc;
+  $('chips').innerHTML=`<span class="chip ${inc?'yes':'no'}">${inc?'incompressible here':'compressible here'}</span><span class="chip ${irr?'yes':'no'}">${irr?'irrotational here':'rotational here'}</span>`;
+  $('modesIntro').textContent=`Each plate applies one part of the local velocity gradient at (${fmtf(S.x0)}, ${fmtf(S.y0)}) to the initial square over the same time t. The dark edge is the square's right side, so you can follow its orientation.`;
+  $('quantIntro').textContent=`The symbolic results above, evaluated at (${fmtf(S.x0)}, ${fmtf(S.y0)}) in double precision.`;}
+
+function updateCode(){const q=s=>JSON.stringify(s),V=S.meta.versions,t=+S.t.toFixed(4);
+  $('code').textContent=
+`# kinematics.py ${V.kinematics} · SymPy ${V.sympy} · NumPy ${V.numpy} · Python ${V.python}
+import kinematics as km
+
+u, v = ${q(S.u)}, ${q(S.v)}
+sym = km.symbolic_kinematics(u, v)        # exact L, D, W, div, omega
+pk  = km.point_kinematics(sym, x0=${S.x0}, y0=${S.y0})
+frames, lines, center = km.simulate(u, v, x0=${S.x0}, y0=${S.y0}, a=${S.a}, T=${S.T})
+modes = km.mode_maps(pk, t=${t})           # (M, c) for each of the four modes
+
+print(sym.L, sym.div, sym.omega, pk, sep="\\n")
+
+# Same result from a terminal, with a figure:
+# python kinematics.py --u ${q(S.u)} --v ${q(S.v)} --x0 ${S.x0} --y0 ${S.y0} --a ${S.a} --T ${S.T} --t ${t} --half-width ${S.L} --plot figure.png`;
+  $('versions').textContent=`Running kinematics.py ${V.kinematics} with SymPy ${V.sympy}, NumPy ${V.numpy}, Python ${V.python} (${V.platform}).`;}
+
+function bgNote(){const n=$('bgNote');
+  if(S.shadeKind==='none'){n.textContent='';return}
+  const name={vorticity:'vorticity ω (red counterclockwise, blue clockwise)',divergence:'divergence ∇·u (red expanding, blue compressing)',speed:'speed |u|'}[S.shadeKind];
+  n.textContent=S.shadeMax==null?`Shading: ${name}, zero everywhere in view.`:`Shading: ${name}, full color at ${S.shadeKind==='speed'?'':'±'}${fmt(S.shadeMax)}.`}
+
+function render(){if(!S.K||!S.frames.length)return;drawMain();for(const k of ['trans','rot','str','shr'])drawMode(k);updateReadouts();bgNote()}
+
+/* ---------- controls ---------- */
+const pw=$('presets');
+PRESETS.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.textContent=p.n;b.id='preset-'+i;b.setAttribute('aria-pressed','false');
+  b.addEventListener('click',()=>applyPreset(i));pw.appendChild(b)});
+function markPreset(i){[...pw.children].forEach((b,k)=>b.setAttribute('aria-pressed',String(k===i)))}
+function applyPreset(i){const p=PRESETS[i];$('uIn').value=p.u;$('vIn').value=p.v;$('x0').value=p.x0;$('y0').value=p.y0;$('side').value=p.a;$('extent').value=p.L;$('dur').value=p.T;
+  markPreset(i);stop();S.T=0;S.t=0;$('tRange').value=600;recompute()}
+['uIn','vIn'].forEach(id=>$(id).addEventListener('input',()=>{markPreset(-1);soon()}));
+['x0','y0','side','extent','dur'].forEach(id=>$(id).addEventListener('input',soon));
+$('tRange').addEventListener('input',e=>{S.t=e.target.value/1000*S.T;stop();render()});
+$('linToggle').addEventListener('change',e=>{S.lin=e.target.checked;render()});
+$('bgSel').addEventListener('change',e=>{S.shadeKind=e.target.value;if(S.ready&&S.K){try{fetchView()}catch(err){showError(pyError(err))}render()}});
+$('main').addEventListener('click',ev=>{if(!S.ready)return;const r=ev.currentTarget.getBoundingClientRect(),L=S.L;
+  $('x0').value=+(-L+(ev.clientX-r.left)/r.width*2*L).toFixed(2);$('y0').value=+(L-(ev.clientY-r.top)/r.height*2*L).toFixed(2);recompute()});
+$('copyBtn').addEventListener('click',()=>{const txt=$('code').textContent,b=$('copyBtn');
+  const done=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1500)};
+  const fallback=()=>{const sel=getSelection(),rg=document.createRange();rg.selectNodeContents($('code'));sel.removeAllRanges();sel.addRange(rg);b.textContent='Selected, press Ctrl+C'};
+  try{navigator.clipboard.writeText(txt).then(done,fallback)}catch(e){fallback()}});
+
+let last=0,raf=0;
+function tick(ts){if(!S.playing)return;const dt=last?(ts-last)/1000:0;last=ts;
+  S.t+=dt*S.T/4;if(S.t>S.T)S.t=0;$('tRange').value=Math.round(S.t/S.T*1000);render();raf=requestAnimationFrame(tick)}
+function stop(){S.playing=false;cancelAnimationFrame(raf);$('play').textContent='Play'}
+$('play').addEventListener('click',()=>{if(!S.K)return;if(S.playing){stop();return}
+  if(S.t>=S.T*0.999)S.t=0;S.playing=true;last=0;$('play').textContent='Pause';raf=requestAnimationFrame(tick)});
+
+readColors();
+const onTheme=()=>{readColors();if(S.shade)buildShade();render()};
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',onTheme)}catch(e){}
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+let rz;new ResizeObserver(()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(render)}).observe(document.querySelector('.wrap'));
+
+// fill the inputs with the first example, then start Python
+(()=>{const p=PRESETS[0];$('uIn').value=p.u;$('vIn').value=p.v;$('x0').value=p.x0;$('y0').value=p.y0;$('side').value=p.a;$('extent').value=p.L;$('dur').value=p.T;markPreset(0)})();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(render);
+boot();
+})();
+</script>
+</body>
+</html>
