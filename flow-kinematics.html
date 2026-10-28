@@ -165,7 +165,7 @@ footer p{margin:0 0 8px}
         <div class="num"><label for="y0">center y₀</label><input id="y0" type="number" step="0.1"></div>
         <div class="num"><label for="side">side a</label><input id="side" type="number" step="0.05" min="0.01"></div>
       </div>
-      <p class="tip">Click on the flow plate to move the parcel there.</p>
+      <p class="tip">Click on the flow panel (right) to move the parcel.</p>
     </div>
     <div class="group">
       <span class="label">View and time</span>
@@ -209,7 +209,7 @@ footer p{margin:0 0 8px}
 <section>
   <div class="section-head">
     <h2>Four modes of parcel motion</h2>
-    <p id="modesIntro">Each plate applies one part of the local velocity gradient, evaluated at the parcel's starting center, to the initial square over the same time t.</p>
+    <p id="modesIntro">Each panel applies one part of the local velocity gradient, evaluated at the parcel's starting center, to the initial square over the same time t.</p>
   </div>
   <div class="modes-grid">
     <figure class="mode">
@@ -313,8 +313,8 @@ footer p{margin:0 0 8px}
 </section>
 
 <footer>
-  <p>Adding the four rates gives the linearized velocity near the center, u ≈ u₀ + (D + W)·ξ, where ξ is the position relative to the center. Each mode plate is that one term's exact flow map: shift by u₀t, rotation by Ωt, stretching by exp(ε_xx t) and exp(ε_yy t), and the shear map with cosh(ε_xy t) and sinh(ε_xy t).</p>
-  <p>The large plate integrates particle paths through the full field with fourth-order Runge–Kutta (240 frames, 3 substeps each), so the parcel bends where the flow is nonuniform. The dotted outline is the exact flow map of the linearized field. Fields are steady.</p>
+  <p><b>Theoretical Note:</b> Adding the four rates gives the linearized velocity near the center, u ≈ u₀ + (D + W)·ξ, where ξ is the position relative to the center. Each mode is the corresponding exact flow map: shift by u₀t, rotation by Ωt, stretching by exp(ε_xx t) and exp(ε_yy t), and the shear map with cosh(ε_xy t) and sinh(ε_xy t).</p>
+  <p>The large panel integrates particle paths through the full field with fourth-order Runge–Kutta (240 frames, 3 substeps each), so the parcel bends where the flow is nonuniform. The dotted outline is the exact flow map of the linearized field. Fields are steady. For any questions: email Prof.\ Debanjan Mukherjee at debanjan@Colorado.Edu.</p>
 </footer>
 </div>
 
