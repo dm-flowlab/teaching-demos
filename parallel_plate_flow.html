@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Between Parallel Plates</title>
+<meta name="description" content="Interactive simulator: laminar flow between inclined parallel plates under viscous, gravity and pressure forces (Couette–Poiseuille flow), computed in Python via Pyodide.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --bg:#f6f5f1; --panel:#ffffff; --ink:#1d2329; --muted:#5d6670; --line:#dcd9d1; --soft:#eeece6;
+  --accent:#0f6e7a; --accent-soft:#d9eef0;
+  --vel:#0f6e7a; --tau:#b4532a; --cou:#6b5bb5; --pres:#c2851a; --grav:#3f8a3a;
+  --fluid:#e3f1f3; --plate:#8a8f96; --plate-dark:#5e636a; --particle:#0f6e7a;
+  --warn-bg:#fdf1e3; --warn:#8a4b0c; --ok:#2d7a3b; --bad:#a3302a;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121619; --panel:#1a1f23; --ink:#e4e7ea; --muted:#9aa3ac; --line:#2e353b; --soft:#232a2f;
+    --accent:#4fb8c4; --accent-soft:#163338;
+    --vel:#4fb8c4; --tau:#e48a5e; --cou:#a597ee; --pres:#e7b04b; --grav:#79c46f;
+    --fluid:#16292d; --plate:#6c737a; --plate-dark:#8d949b; --particle:#7fd3dc;
+    --warn-bg:#2e2416; --warn:#f0b56b; --ok:#6fcf7f; --bad:#f08079;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121619; --panel:#1a1f23; --ink:#e4e7ea; --muted:#9aa3ac; --line:#2e353b; --soft:#232a2f;
+  --accent:#4fb8c4; --accent-soft:#163338;
+  --vel:#4fb8c4; --tau:#e48a5e; --cou:#a597ee; --pres:#e7b04b; --grav:#79c46f;
+  --fluid:#16292d; --plate:#6c737a; --plate-dark:#8d949b; --particle:#7fd3dc;
+  --warn-bg:#2e2416; --warn:#f0b56b; --ok:#6fcf7f; --bad:#f08079;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px 48px}
+header h1{font-size:26px;font-weight:600;margin:0 0 2px;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted);max-width:820px}
+.status{display:flex;align-items:center;gap:10px;margin:14px 0 18px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:13.5px;color:var(--muted)}
+.status .dot{width:9px;height:9px;border-radius:50%;background:var(--pres);flex:none}
+.status.ready .dot{background:var(--ok)} .status.error .dot{background:var(--bad)} .status.error{color:var(--bad)}
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card + .card{margin-top:12px}
+.card h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px}
+.card h3{font-size:15px;font-weight:600;margin:0 0 8px}
+.row{display:grid;grid-template-columns:1fr 96px;gap:8px;align-items:center;margin:6px 0}
+.row label{font-size:13.5px}
+.row .sub{display:block;font-size:12px;color:var(--muted)}
+input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:0}
+input[type=number],select{width:100%;font:13.5px var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 7px}
+select{font-family:var(--sans)}
+input:disabled{opacity:.45}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin:4px 0 8px}
+.seg label{flex:1;text-align:center;font-size:13px;padding:6px 4px;cursor:pointer;user-select:none;background:var(--bg)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:#fff}
+:root[data-theme="dark"] .seg label:has(input:checked){color:#0b1416}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .seg label:has(input:checked){color:#0b1416}}
+.hint{font-size:12px;color:var(--muted);margin:2px 0 0}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+button{font:13px var(--sans);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.check{display:flex;gap:8px;align-items:center;font-size:13.5px;margin:6px 0;cursor:pointer}
+.check input{accent-color:var(--accent)}
+canvas{display:block;width:100%}
+#schem{height:340px}
+.plots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media (max-width:640px){.plots{grid-template-columns:minmax(0,1fr)}}
+.plot canvas{height:330px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid currentColor}
+.legend i.d{border-top-style:dashed}
+.forces{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:13px}
+.bar{position:relative;height:12px;background:var(--soft);border-radius:3px}
+.bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1px solid var(--muted)}
+.bar b{position:absolute;top:0;bottom:0;border-radius:3px}
+.forces .v{font-family:var(--mono);font-size:12.5px;text-align:right;min-width:92px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg)}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font:500 16px var(--mono);margin-top:2px;word-break:break-word}
+.stat .u{font-size:12px;color:var(--muted);font-family:var(--sans);font-weight:400}
+.notes{margin:10px 0 0;padding:0;list-style:none}
+.notes li{font-size:13.5px;padding:6px 10px;border-radius:6px;background:var(--accent-soft);margin-top:6px}
+.notes li.warn{background:var(--warn-bg);color:var(--warn)}
+.eq{overflow-x:auto;padding:4px 0;font-family:var(--mono);font-size:14px}
+.eq .katex{font-size:1.08em}
+.small{font-size:12.5px;color:var(--muted)}
+.steps{counter-reset:s;margin:0;padding:0;list-style:none}
+.steps li{counter-increment:s;padding:10px 0;border-top:1px solid var(--line)}
+.steps li:first-child{border-top:0}
+.steps .t{font-size:13px;font-weight:600;color:var(--muted)}
+.steps .t::before{content:counter(s) ". "}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;margin-top:8px}
+.checks .ok{color:var(--ok)} .checks .no{color:var(--bad)}
+pre{margin:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;font:12.5px/1.5 var(--mono);max-height:520px;white-space:pre}
+.code-inline{font:13px var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;overflow-x:auto;white-space:pre}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+details summary{cursor:pointer;font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+.loading-veil{position:relative}
+.loading-veil.busy::after{content:"Loading Python…";position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--panel) 75%,transparent);color:var(--muted);font-size:14px;border-radius:10px}
+.err{color:var(--bad);font-size:13.5px;margin-top:8px}
+footer{margin-top:28px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Flow Between Parallel Plates</h1>
+  <p>Steady, fully developed laminar flow between two infinite plates inclined at θ to the horizontal, driven by any combination of plate motion, a pressure gradient along the plates and gravity. The profiles come from the exact plane Couette–Poiseuille solution, computed in Python running in your browser.</p>
+</header>
+
+<div class="status" id="status" role="status"><span class="dot"></span><span id="statusText">Loading Python runtime (Pyodide)…</span></div>
+
+<div class="grid">
+<!-- ======================= CONTROLS ======================= -->
+<aside>
+  <div class="card">
+    <h2>Scenarios</h2>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="card">
+    <h2>Fluid and gap</h2>
+    <div class="row"><label for="fluid">Fluid</label>
+      <select id="fluid" style="grid-column:2"><option value="glycerin">Glycerin</option><option value="custom">Custom</option></select></div>
+    <div class="row"><label for="mu">Viscosity μ <span class="sub">Pa·s</span></label><input type="number" id="mu" value="1.41" min="0" step="any"></div>
+    <div class="row"><label for="rho">Density ρ <span class="sub">kg/m³</span></label><input type="number" id="rho" value="1260" min="0" step="any"></div>
+    <div class="row"><label for="h_n">Plate spacing h <span class="sub">mm</span></label><input type="number" id="h_n" value="10" min="0.01" step="any">
+      <input type="range" id="h_r" min="0.5" max="50" step="0.5" value="10" aria-label="Plate spacing h in mm"></div>
+  </div>
+
+  <div class="card">
+    <h2>Inclination</h2>
+    <div class="row"><label for="th_n">Angle θ to horizontal <span class="sub">degrees, 0–90</span></label><input type="number" id="th_n" value="30" min="0" max="90" step="any">
+      <input type="range" id="th_r" min="0" max="90" step="1" value="30" aria-label="Inclination angle in degrees"></div>
+    <p class="hint">+x points down the incline. θ = 90° is a vertical channel with +x pointing down.</p>
+  </div>
+
+  <div class="card">
+    <h2>Pressure gradient along the plates</h2>
+    <div class="seg" role="radiogroup" aria-label="Pressure gradient type">
+      <label><input type="radio" name="pmode" value="neg"> Favorable (dp/dx &lt; 0)</label>
+      <label><input type="radio" name="pmode" value="zero" checked> None</label>
+      <label><input type="radio" name="pmode" value="pos"> Adverse (dp/dx &gt; 0)</label>
+    </div>
+    <div class="row"><label for="dp_n">Magnitude |dp/dx| <span class="sub">Pa/m</span></label><input type="number" id="dp_n" value="0" min="0" step="any">
+      <input type="range" id="dp_r" min="0" max="20000" step="50" value="0" aria-label="Pressure gradient magnitude in Pa per m"></div>
+    <p class="hint">Favorable pushes fluid toward +x (down the incline); adverse pushes toward −x.</p>
+  </div>
+
+  <div class="card">
+    <h2>Upper plate (y = h)</h2>
+    <div class="seg" role="radiogroup" aria-label="Upper plate motion">
+      <label><input type="radio" name="tmode" value="fixed" checked> Stationary</label>
+      <label><input type="radio" name="tmode" value="moving"> Moving</label>
+    </div>
+    <div class="row"><label for="ut_n">Velocity U<sub>t</sub> <span class="sub">m/s, + is +x</span></label><input type="number" id="ut_n" value="0.05" step="any">
+      <input type="range" id="ut_r" min="-0.5" max="0.5" step="0.005" value="0.05" aria-label="Upper plate velocity in m/s"></div>
+  </div>
+
+  <div class="card">
+    <h2>Lower plate (y = 0)</h2>
+    <div class="seg" role="radiogroup" aria-label="Lower plate motion">
+      <label><input type="radio" name="bmode" value="fixed" checked> Stationary</label>
+      <label><input type="radio" name="bmode" value="moving"> Moving</label>
+    </div>
+    <div class="row"><label for="ub_n">Velocity U<sub>b</sub> <span class="sub">m/s, + is +x</span></label><input type="number" id="ub_n" value="0.05" step="any">
+      <input type="range" id="ub_r" min="-0.5" max="0.5" step="0.005" value="0.05" aria-label="Lower plate velocity in m/s"></div>
+  </div>
+
+  <div class="card">
+    <h2>Display</h2>
+    <label class="check"><input type="checkbox" id="showComp" checked> Show superposed parts (Couette, pressure, gravity)</label>
+    <label class="check"><input type="checkbox" id="lockAxes"> Lock plot axes (compare cases)</label>
+    <label class="check"><input type="checkbox" id="animate" checked> Animate tracer particles</label>
+  </div>
+</aside>
+
+<!-- ======================= RESULTS ======================= -->
+<main>
+  <div class="card loading-veil busy" id="schemCard">
+    <h2>Channel</h2>
+    <canvas id="schem" aria-label="Schematic of the inclined channel with velocity profile and moving tracer particles"></canvas>
+    <p class="small" style="margin:6px 0 0">Arrows show u(y) at one station, drawn to the same scale as the plate-velocity arrows. Particle speeds are scaled for viewing.</p>
+  </div>
+
+  <div class="card">
+    <h2>Driving forces per unit volume along +x</h2>
+    <div class="forces" id="forces"></div>
+  </div>
+
+  <div class="plots">
+    <div class="card plot loading-veil busy" id="uCard">
+      <h3>Velocity profile u(y)</h3>
+      <canvas id="uPlot" aria-label="Velocity profile plot"></canvas>
+      <div class="legend" id="uLegend"></div>
+    </div>
+    <div class="card plot loading-veil busy" id="tCard">
+      <h3>Shear stress τ(y) = μ du/dy</h3>
+      <canvas id="tPlot" aria-label="Shear stress profile plot"></canvas>
+      <div class="legend" id="tLegend"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h2>Results</h2>
+    <div class="stats" id="stats"></div>
+    <div class="eq" id="eqU"></div>
+    <div class="eq" id="eqT"></div>
+    <p class="small" style="margin:2px 0 0">Coefficients in SI units with y in metres, measured from the lower plate.</p>
+    <ul class="notes" id="notes"></ul>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h2>Derivation</h2>
+    <p style="margin:0 0 8px">Assumptions: steady, incompressible, laminar flow of a Newtonian fluid with constant μ and ρ between infinite plates; fully developed, so ∂u/∂x = 0, continuity gives v = 0 and u = u(y). The y-momentum equation, 0 = −∂p/∂y − ρg cos θ, makes the pressure hydrostatic across the gap, so dp/dx is the same at every y. The x-momentum equation then reduces to an ODE that SymPy integrates below.</p>
+    <div id="deriv" class="small">Waiting for SymPy to load…</div>
+  </div>
+
+  <div class="two" style="margin-top:12px">
+    <div class="card">
+      <h2>Reproduce this case</h2>
+      <p class="small" style="margin:0 0 6px">Run the same Python file locally with the current inputs:</p>
+      <div class="code-inline" id="cli"></div>
+      <div class="btns"><button id="copyCli">Copy command</button></div>
+      <div class="code-inline" id="api"></div>
+    </div>
+    <div class="card">
+      <h2>Python source</h2>
+      <p class="small" style="margin:0 0 6px">This page runs <code>parallel_plate_flow.py</code>, embedded below, unchanged. The file also runs from the command line and includes a self-test (<code>--selftest</code>).</p>
+      <div class="btns"><button id="dlPy" class="primary">Download parallel_plate_flow.py</button><button id="copyPy">Copy source</button></div>
+      <p class="small" id="versions" style="margin:4px 0 0"></p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <details><summary>View Python source</summary><pre id="srcView" style="margin-top:10px"></pre></details>
+  </div>
+</main>
+</div>
+<footer>Exact solution for steady, fully developed laminar flow. Fluid properties are representative room-temperature values. Pyodide <span id="pyver">0.26.4</span>.</footer>
+</div>
+
+<!-- BEGIN parallel_plate_flow.py (generated by embed_python.py from parallel_plate_flow.py; edit that file, then rerun) -->
+<script type="text/x-python" id="py-src">
+#!/usr/bin/env python3
+"""
+parallel_plate_flow.py
+======================
+
+Steady, fully developed, laminar flow of a Newtonian fluid between two infinite
+parallel plates under the combined action of
+
+    * viscous forces,
+    * gravity (the plates are inclined at an angle theta to the horizontal), and
+    * an imposed pressure gradient along the plates,
+
+with either plate held stationary or translating at a fixed velocity in its own
+plane (generalized Couette-Poiseuille flow).
+
+This file is the computational engine of the interactive "Flow Between
+Parallel Plates" simulator. The web page runs this exact file in the browser
+through Pyodide; the same file runs unchanged from the command line.
+
+Coordinate system and sign conventions
+--------------------------------------
+    x : along the plates, pointing DOWN the incline (the direction in which the
+        along-plate component of gravity acts). For theta = 0 the plates are
+        horizontal; for theta = 90 deg the channel is vertical and +x points
+        straight down.
+    y : normal to the plates, measured from the lower plate (y = 0) to the
+        upper plate (y = h).
+    u(y) : velocity component along +x. Plate velocities U_bottom (at y = 0)
+        and U_top (at y = h) are positive when the plate moves in +x.
+    dp/dx : imposed pressure gradient along +x. dp/dx < 0 (favorable) pushes
+        fluid toward +x; dp/dx > 0 (adverse) pushes fluid toward -x.
+    tau(y) = tau_yx = mu du/dy : viscous shear stress.
+
+Derivation (plane Poiseuille / Couette-Poiseuille flow with gravity)
+-------------------------------------------------------------------
+Assumptions: steady, incompressible, laminar, constant mu and rho, plates of
+infinite extent, fully developed flow (du/dx = 0), so continuity gives v = 0
+and u = u(y) only.
+
+The Navier-Stokes equations reduce to
+
+    x-momentum:  0 = -dp/dx + rho g sin(theta) + mu d2u/dy2
+    y-momentum:  0 = -dp/dy - rho g cos(theta)
+
+The y-momentum equation says pressure is hydrostatic across the gap,
+p(x, y) = p0 + (dp/dx) x - rho g cos(theta) y, so dp/dx is the same at every y
+and is a constant. Collecting the two body/pressure terms into one effective
+driving gradient
+
+    G = -dp/dx + rho g sin(theta)        [Pa/m]
+
+the x-momentum equation becomes  mu d2u/dy2 = -G. Integrating twice,
+
+    u(y) = -G y^2 / (2 mu) + C1 y + C2,
+
+and the no-slip conditions u(0) = U_bottom, u(h) = U_top give
+
+    u(y) = U_bottom + (U_top - U_bottom) y/h + (G / (2 mu)) y (h - y)
+
+    tau(y) = mu du/dy = mu (U_top - U_bottom)/h + G (h/2 - y)
+
+    Q' = integral_0^h u dy = (U_bottom + U_top) h / 2 + G h^3 / (12 mu)
+         (volume flow rate per unit width, m^2/s)
+
+Because the governing equation is linear, u(y) is the superposition of three
+separate solutions: a Couette (plate-driven) part, a pressure-driven plane
+Poiseuille part, and a gravity-driven part with the same parabolic shape.
+derive_symbolic() repeats this derivation step by step with SymPy and checks
+that the result satisfies the ODE and both boundary conditions.
+
+Usage
+-----
+    python parallel_plate_flow.py --theta 30 --dpdx -2000 --u-top 0.1
+    python parallel_plate_flow.py --fluid water --h-mm 1 --plot
+    python parallel_plate_flow.py --derive        # symbolic derivation (needs SymPy)
+    python parallel_plate_flow.py --selftest      # built-in checks
+    python parallel_plate_flow.py --help
+
+The numerical solution uses only the Python standard library. SymPy is needed
+only for derive_symbolic(); matplotlib only for --plot.
+"""
+
+import argparse
+import json
+import math
+import sys
+
+__version__ = "1.0.0"
+
+G_STANDARD = 9.81  # m/s^2
+
+# Representative properties near 20-25 C. Values are typical, not authoritative;
+# use "custom" values for a specific fluid.
+FLUIDS = {
+    "water": {"label": "Water", "mu": 1.0e-3, "rho": 998.0},
+    "blood": {"label": "Blood (Newtonian approx.)", "mu": 3.5e-3, "rho": 1060.0},
+    "olive_oil": {"label": "Olive oil", "mu": 0.081, "rho": 910.0},
+    "glycerin": {"label": "Glycerin", "mu": 1.41, "rho": 1260.0},
+    "honey": {"label": "Honey", "mu": 10.0, "rho": 1420.0},
+}
+
+# Indicative Reynolds number (based on gap h and max |u|) above which the
+# laminar solution should be treated with caution.
+RE_CAUTION = 1000.0
+
+
+# ---------------------------------------------------------------------------
+# Closed-form solution
+# ---------------------------------------------------------------------------
+
+def driving_gradient(dpdx, rho, theta_deg, g=G_STANDARD):
+    """Effective driving gradient G = -dp/dx + rho g sin(theta), in Pa/m."""
+    return -dpdx + rho * g * math.sin(math.radians(theta_deg))
+
+
+def velocity(y, h, mu, G, U_bottom, U_top):
+    """u(y) = U_b + (U_t - U_b) y/h + G y (h - y) / (2 mu)."""
+    return U_bottom + (U_top - U_bottom) * y / h + G * y * (h - y) / (2.0 * mu)
+
+
+def shear_stress(y, h, mu, G, U_bottom, U_top):
+    """tau_yx(y) = mu (U_t - U_b)/h + G (h/2 - y)."""
+    return mu * (U_top - U_bottom) / h + G * (0.5 * h - y)
+
+
+def flow_rate(h, mu, G, U_bottom, U_top):
+    """Volume flow rate per unit width, Q' = (U_b + U_t) h/2 + G h^3/(12 mu)."""
+    return 0.5 * (U_bottom + U_top) * h + G * h ** 3 / (12.0 * mu)
+
+
+def _validate(h, mu, rho, theta_deg, n):
+    if not (h > 0 and math.isfinite(h)):
+        raise ValueError("Plate spacing h must be a positive number.")
+    if not (mu > 0 and math.isfinite(mu)):
+        raise ValueError("Viscosity mu must be a positive number.")
+    if not (rho > 0 and math.isfinite(rho)):
+        raise ValueError("Density rho must be a positive number.")
+    if not (0.0 <= theta_deg <= 90.0):
+        raise ValueError("Inclination theta must be between 0 and 90 degrees.")
+    if int(n) < 3:
+        raise ValueError("Need at least 3 sample points across the gap.")
+
+
+def _fmt(v, sig=4):
+    """Compact number formatting for equation strings."""
+    if v == 0 or not math.isfinite(v):
+        return "0" if v == 0 else str(v)
+    a = abs(v)
+    if 1e-3 <= a < 1e5:
+        s = f"{v:.{sig}g}"
+    else:
+        s = f"{v:.{sig - 1}e}"
+        mant, ex = s.split("e")
+        s = f"{mant}e{int(ex)}"
+    return s
+
+
+def _poly_string(coeffs, var="y", latex=False):
+    """Format c0 + c1*var + c2*var^2 (zero terms dropped)."""
+    terms = []
+    for power, c in enumerate(coeffs):
+        if c == 0:
+            continue
+        mag = _fmt(abs(c))
+        if latex and "e" in mag:
+            m, e = mag.split("e")
+            mag = f"{m}\\times 10^{{{int(e)}}}"
+        if power == 0:
+            body = mag
+        elif power == 1:
+            body = f"{mag}\\,{var}" if latex else f"{mag} {var}"
+        else:
+            body = f"{mag}\\,{var}^{{{power}}}" if latex else f"{mag} {var}^{power}"
+        sign = "-" if c < 0 else "+"
+        terms.append((sign, body))
+    if not terms:
+        return "0"
+    first_sign, first_body = terms[0]
+    out = ("-" if first_sign == "-" else "") + first_body
+    for sign, body in terms[1:]:
+        out += f" {sign} {body}"
+    return out
+
+
+def _real_roots_in_gap(a2, a1, a0, h):
+    """Roots of a2 y^2 + a1 y + a0 = 0 strictly inside (0, h)."""
+    roots = []
+    scale = max(abs(a0), abs(a1) * h, abs(a2) * h * h, 1e-300)
+    if abs(a2) * h * h <= 1e-12 * scale:
+        if abs(a1) * h > 1e-12 * scale:
+            roots = [-a0 / a1]
+    else:
+        disc = a1 * a1 - 4.0 * a2 * a0
+        if disc >= 0:
+            sq = math.sqrt(disc)
+            # numerically stable quadratic roots
+            q = -0.5 * (a1 + math.copysign(sq, a1)) if a1 != 0 else -0.5 * sq
+            cand = []
+            if q != 0:
+                cand.append(q / a2)
+                cand.append(a0 / q)
+            else:
+                cand.append(0.0)
+            roots = cand
+    tol = 1e-9 * h
+    out = sorted({round(r, 15) for r in roots if tol < r < h - tol})
+    return out
+
+
+def solve(h, mu, rho, theta_deg, dpdx, U_bottom=0.0, U_top=0.0,
+          g=G_STANDARD, n=201):
+    """Velocity and shear-stress profiles plus derived quantities.
+
+    Parameters (SI units)
+    ---------------------
+    h         : plate spacing [m]
+    mu        : dynamic viscosity [Pa s]
+    rho       : density [kg/m^3]
+    theta_deg : inclination of the plates to the horizontal [deg], 0..90
+    dpdx      : pressure gradient along +x (down-slope) [Pa/m]
+    U_bottom  : velocity of the lower plate (y = 0) along +x [m/s]
+    U_top     : velocity of the upper plate (y = h) along +x [m/s]
+    g         : gravitational acceleration [m/s^2]
+    n         : number of sample points across the gap
+
+    Returns a dict of plain Python floats and lists (JSON serializable).
+    """
+    _validate(h, mu, rho, theta_deg, n)
+    n = int(n)
+    th = math.radians(theta_deg)
+    G_gravity = rho * g * math.sin(th)
+    G_pressure = -dpdx + 0.0  # "+ 0.0" turns -0.0 into 0.0
+    G = G_pressure + G_gravity
+    # snap round-off to an exact zero when pressure and gravity balance
+    if abs(G) <= 1e-9 * max(abs(G_pressure), abs(G_gravity)):
+        G = 0.0
+
+    ys = [h * i / (n - 1) for i in range(n)]
+    u = [velocity(y, h, mu, G, U_bottom, U_top) for y in ys]
+    tau = [shear_stress(y, h, mu, G, U_bottom, U_top) for y in ys]
+
+    # superposition of the three elementary solutions
+    u_couette = [U_bottom + (U_top - U_bottom) * y / h for y in ys]
+    u_pressure = [G_pressure * y * (h - y) / (2.0 * mu) for y in ys]
+    u_gravity = [G_gravity * y * (h - y) / (2.0 * mu) for y in ys]
+    tau_couette = [mu * (U_top - U_bottom) / h for _ in ys]
+    tau_pressure = [G_pressure * (0.5 * h - y) for y in ys]
+    tau_gravity = [G_gravity * (0.5 * h - y) for y in ys]
+
+    Q = flow_rate(h, mu, G, U_bottom, U_top)
+    V_mean = Q / h
+
+    # polynomial coefficients: u = a0 + a1 y + a2 y^2 ; tau = b0 + b1 y
+    a0 = U_bottom
+    a1 = (U_top - U_bottom) / h + G * h / (2.0 * mu)
+    a2 = -G / (2.0 * mu)
+    b0 = mu * a1
+    b1 = 2.0 * mu * a2  # = -G
+
+    # velocity extremum (zero shear stress) inside the gap
+    y_zero_shear = None
+    u_extremum = None
+    extremum_kind = None
+    if G != 0:
+        ys_star = 0.5 * h + mu * (U_top - U_bottom) / (G * h)
+        if 0.0 < ys_star < h:
+            y_zero_shear = ys_star
+            u_extremum = velocity(ys_star, h, mu, G, U_bottom, U_top)
+            extremum_kind = "maximum" if G > 0 else "minimum"
+
+    # global max / min of u over [0, h] (endpoints or interior extremum)
+    cand = [(0.0, U_bottom), (h, U_top)]
+    if y_zero_shear is not None:
+        cand.append((y_zero_shear, u_extremum))
+    y_umax, u_max = max(cand, key=lambda t: t[1])
+    y_umin, u_min = min(cand, key=lambda t: t[1])
+
+    u_zero_crossings = _real_roots_in_gap(a2, a1, a0, h)
+
+    tau_lower = shear_stress(0.0, h, mu, G, U_bottom, U_top)
+    tau_upper = shear_stress(h, h, mu, G, U_bottom, U_top)
+
+    U_ref = max(abs(u_max), abs(u_min))
+    Re = rho * U_ref * h / mu
+
+    notes = []
+    if U_ref == 0:
+        notes.append("No driving: the fluid is at rest (u = 0 everywhere).")
+    if u_zero_crossings:
+        where = ", ".join(f"y/h = {y / h:.3f}" for y in u_zero_crossings)
+        notes.append(f"Flow reversal: u changes sign inside the gap ({where}).")
+    if U_ref > 0 and abs(Q) <= 1e-12 * U_ref * h:
+        notes.append("Net flow rate is zero: forward and backward flow cancel.")
+    elif Q < 0:
+        notes.append("Net flow is in the -x direction (up the incline).")
+    if y_zero_shear is not None:
+        notes.append(
+            f"Shear stress vanishes at y/h = {y_zero_shear / h:.3f}, "
+            f"where u has its {extremum_kind}."
+        )
+    if G == 0 and U_ref > 0:
+        if G_pressure != 0 or G_gravity != 0:
+            notes.append("G = 0: pressure and gravity balance; pure Couette flow (linear profile).")
+        else:
+            notes.append("No pressure or gravity driving: pure Couette flow (linear profile).")
+    if theta_deg > 0 and dpdx != 0 and G_pressure * G_gravity < 0:
+        notes.append("Pressure gradient opposes the along-plate component of gravity.")
+    if Re > RE_CAUTION:
+        notes.append(
+            f"Re = {Re:.3g} is large; real flows may be transitional or turbulent "
+            "here, so treat the laminar profile with caution."
+        )
+
+    eq_u = "u(y) = " + _poly_string([a0, a1, a2])
+    eq_tau = "tau(y) = " + _poly_string([b0, b1])
+    eq_u_tex = "u(y) = " + _poly_string([a0, a1, a2], latex=True)
+    eq_tau_tex = "\\tau(y) = " + _poly_string([b0, b1], latex=True)
+
+    return {
+        "inputs": {
+            "h": h, "mu": mu, "rho": rho, "theta_deg": theta_deg,
+            "dpdx": dpdx, "U_bottom": U_bottom, "U_top": U_top, "g": g, "n": n,
+        },
+        "y": ys,
+        "u": u,
+        "tau": tau,
+        "components": {
+            "u_couette": u_couette, "u_pressure": u_pressure, "u_gravity": u_gravity,
+            "tau_couette": tau_couette, "tau_pressure": tau_pressure,
+            "tau_gravity": tau_gravity,
+        },
+        "G": G,
+        "G_pressure": G_pressure,
+        "G_gravity": G_gravity,
+        "Q_per_width": Q,
+        "V_mean": V_mean,
+        "u_max": u_max, "y_umax": y_umax,
+        "u_min": u_min, "y_umin": y_umin,
+        "y_zero_shear": y_zero_shear,
+        "u_extremum": u_extremum,
+        "extremum_kind": extremum_kind,
+        "u_zero_crossings": u_zero_crossings,
+        "tau_lower_wall": tau_lower,
+        "tau_upper_wall": tau_upper,
+        "force_on_lower_plate": tau_lower,    # +x shear force per area exerted by fluid
+        "force_on_upper_plate": -tau_upper,   # +x shear force per area exerted by fluid
+        "Re": Re,
+        "coefficients": {"a0": a0, "a1": a1, "a2": a2, "b0": b0, "b1": b1},
+        "equation_u": eq_u,
+        "equation_tau": eq_tau,
+        "equation_u_latex": eq_u_tex,
+        "equation_tau_latex": eq_tau_tex,
+        "notes": notes,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Symbolic derivation (SymPy)
+# ---------------------------------------------------------------------------
+
+def derive_symbolic():
+    """Derive u(y), tau(y) and Q' step by step with SymPy.
+
+    Returns a dict of LaTeX strings for each step, plain-text forms of the
+    results, and verification flags (ODE residual and boundary conditions),
+    plus a numerical cross-check against the closed form used by solve().
+    """
+    import sympy as sp
+
+    y, h, mu = sp.symbols("y h mu", positive=True)
+    G, C1, C2 = sp.symbols("G C_1 C_2", real=True)
+    Ub, Ut = sp.symbols("U_b U_t", real=True)
+    rho, g, theta, dpdx = sp.symbols("rho g theta dpdx", real=True)
+    u = sp.Function("u")
+
+    # Governing ODE: mu u'' = -G, with G = -dp/dx + rho g sin(theta)
+    ode = sp.Eq(mu * u(y).diff(y, 2), -G)
+    d2u = -G / mu
+
+    # First integration: du/dy
+    du = sp.integrate(d2u, y) + C1
+    # Second integration: u(y) with two constants
+    u_general = sp.integrate(du, y) + C2
+
+    # No-slip boundary conditions
+    bc0 = sp.Eq(u_general.subs(y, 0), Ub)
+    bch = sp.Eq(u_general.subs(y, h), Ut)
+    consts = sp.solve([bc0, bch], [C1, C2], dict=True)[0]
+
+    u_sol = sp.expand(u_general.subs(consts))
+    # Present in the standard superposed form and prove it is the same function
+    u_form = Ub + (Ut - Ub) * y / h + G / (2 * mu) * y * (h - y)
+    same_form = sp.simplify(u_sol - u_form) == 0
+
+    tau_sol = sp.simplify(mu * sp.diff(u_sol, y))
+    tau_form = mu * (Ut - Ub) / h + G * (h / 2 - y)
+    same_tau = sp.simplify(tau_sol - tau_form) == 0
+
+    Q_sol = sp.simplify(sp.integrate(u_sol, (y, 0, h)))
+    Q_form = (Ub + Ut) * h / 2 + G * h ** 3 / (12 * mu)
+    same_Q = sp.simplify(Q_sol - Q_form) == 0
+
+    # Verification: ODE residual and boundary conditions
+    residual = sp.simplify(mu * sp.diff(u_sol, y, 2) + G)
+    bc0_ok = sp.simplify(u_sol.subs(y, 0) - Ub) == 0
+    bch_ok = sp.simplify(u_sol.subs(y, h) - Ut) == 0
+
+    # Location of zero shear stress (velocity extremum)
+    y_star = sp.solve(sp.Eq(tau_form, 0), y)
+    y_star = sp.simplify(y_star[0]) if y_star else None
+
+    # Numerical cross-check of the symbolic result against solve()
+    test = {"h": 0.01, "mu": 0.9, "rho": 1100.0, "theta_deg": 35.0,
+            "dpdx": 1500.0, "U_bottom": -0.05, "U_top": 0.12}
+    G_num = driving_gradient(test["dpdx"], test["rho"], test["theta_deg"])
+    subs = {h: test["h"], mu: test["mu"], G: G_num,
+            Ub: test["U_bottom"], Ut: test["U_top"]}
+    f_u = sp.lambdify(y, u_sol.subs(subs), "math")
+    f_tau = sp.lambdify(y, tau_sol.subs(subs), "math")
+    num = solve(n=11, **test)
+    err_u = max(abs(f_u(yy) - uu) for yy, uu in zip(num["y"], num["u"]))
+    err_tau = max(abs(f_tau(yy) - tt) for yy, tt in zip(num["y"], num["tau"]))
+    Q_sym = float(Q_sol.subs(subs))
+    err_Q = abs(Q_sym - num["Q_per_width"])
+    numeric_ok = (err_u <= 1e-12 * max(1.0, max(abs(v) for v in num["u"]))
+                  and err_tau <= 1e-12 * max(1.0, max(abs(v) for v in num["tau"]))
+                  and err_Q <= 1e-12 * max(1.0, abs(num["Q_per_width"])))
+
+    L = sp.latex
+    G_def = sp.Eq(G, -dpdx + rho * g * sp.sin(theta))
+    G_def_tex = (L(G) + r" \equiv -\frac{dp}{dx} + \rho g \sin\theta")
+
+    steps = [
+        {"title": "Governing equation (x-momentum)",
+         "latex": r"0 = -\frac{dp}{dx} + \rho g\sin\theta + \mu\frac{d^2u}{dy^2}"
+                  r"\quad\Longrightarrow\quad " + L(ode),
+         "note": "where", "note_latex": G_def_tex},
+        {"title": "First integration",
+         "latex": r"\frac{du}{dy} = " + L(du)},
+        {"title": "Second integration",
+         "latex": "u(y) = " + L(u_general)},
+        {"title": "No-slip boundary conditions",
+         "latex": L(bc0) + r",\qquad " + L(bch)},
+        {"title": "Constants of integration",
+         "latex": L(C1) + " = " + L(sp.simplify(consts[C1])) + r",\qquad "
+                  + L(C2) + " = " + L(consts[C2])},
+        {"title": "Velocity profile",
+         "latex": "u(y) = " + L(u_form)},
+        {"title": "Shear stress",
+         "latex": r"\tau(y) = \mu\frac{du}{dy} = " + L(tau_form)},
+        {"title": "Flow rate per unit width",
+         "latex": r"Q' = \int_0^h u\,dy = " + L(Q_form)},
+    ]
+    if y_star is not None:
+        steps.append({"title": "Zero shear stress (velocity extremum)",
+                      "latex": r"\tau(y^*) = 0 \;\Longrightarrow\; y^* = " + L(y_star)})
+
+    checks = {
+        "ode_residual_zero": bool(residual == 0),
+        "bc_lower_satisfied": bool(bc0_ok),
+        "bc_upper_satisfied": bool(bch_ok),
+        "matches_superposed_form": bool(same_form),
+        "tau_matches": bool(same_tau),
+        "Q_matches": bool(same_Q),
+        "numeric_matches_solver": bool(numeric_ok),
+        "max_abs_error_u": float(err_u),
+        "max_abs_error_tau": float(err_tau),
+        "abs_error_Q": float(err_Q),
+    }
+    checks["all_passed"] = all(v for k, v in checks.items()
+                               if isinstance(v, bool))
+
+    return {
+        "sympy_version": sp.__version__,
+        "steps": steps,
+        "G_definition": str(G_def),
+        "u": str(u_form),
+        "tau": str(tau_form),
+        "Q": str(Q_form),
+        "y_zero_shear": str(y_star) if y_star is not None else None,
+        "checks": checks,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Web (Pyodide) entry points: JSON string in, JSON string out
+# ---------------------------------------------------------------------------
+
+_SOLVE_KEYS = ("h", "mu", "rho", "theta_deg", "dpdx", "U_bottom", "U_top", "g", "n")
+
+
+def web_solve(params_json):
+    """JSON wrapper around solve() used by the web page."""
+    try:
+        p = json.loads(params_json)
+        kwargs = {k: float(p[k]) for k in _SOLVE_KEYS if k in p and k != "n"}
+        if "n" in p:
+            kwargs["n"] = int(p["n"])
+        return json.dumps({"ok": True, "result": solve(**kwargs)})
+    except Exception as exc:  # report to the page instead of raising
+        return json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"})
+
+
+def web_derive():
+    """JSON wrapper around derive_symbolic() used by the web page."""
+    try:
+        return json.dumps({"ok": True, "result": derive_symbolic()})
+    except Exception as exc:
+        return json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"})
+
+
+def web_info():
+    return json.dumps({
+        "version": __version__,
+        "python": sys.version.split()[0],
+        "fluids": FLUIDS,
+        "g": G_STANDARD,
+        "re_caution": RE_CAUTION,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Self-test
+# ---------------------------------------------------------------------------
+
+def selftest(verbose=True):
+    """Check solve() against classical limits and the governing equations."""
+    failures = []
+
+    def check(name, cond):
+        if verbose:
+            print(("PASS  " if cond else "FAIL  ") + name)
+        if not cond:
+            failures.append(name)
+
+    def close(a, b, rel=1e-10, abs_=1e-14):
+        return abs(a - b) <= max(rel * max(abs(a), abs(b)), abs_)
+
+    h, mu, rho = 0.01, 1.41, 1260.0
+
+    # 1. Plane Poiseuille: u_max = -dpdx h^2/(8 mu) at y = h/2; Q = -dpdx h^3/(12 mu)
+    r = solve(h, mu, rho, 0.0, -1000.0)
+    check("Poiseuille u_max = -dp/dx h^2 / (8 mu)", close(r["u_max"], 1000 * h ** 2 / (8 * mu)))
+    check("Poiseuille u_max at y = h/2", close(r["y_umax"], h / 2))
+    check("Poiseuille Q' = -dp/dx h^3 / (12 mu)", close(r["Q_per_width"], 1000 * h ** 3 / (12 * mu)))
+    check("Poiseuille V_mean = (2/3) u_max", close(r["V_mean"], 2 / 3 * r["u_max"]))
+    check("Poiseuille wall shear = G h/2 (lower), -G h/2 (upper)",
+          close(r["tau_lower_wall"], 1000 * h / 2) and close(r["tau_upper_wall"], -1000 * h / 2))
+
+    # 2. Plane Couette: linear profile, uniform tau = mu U/h, Q = U h / 2
+    r = solve(h, mu, rho, 0.0, 0.0, U_bottom=0.0, U_top=0.2)
+    lin = all(close(u, 0.2 * y / h, abs_=1e-15) for y, u in zip(r["y"], r["u"]))
+    check("Couette profile is linear", lin)
+    check("Couette tau = mu U / h everywhere", all(close(t, mu * 0.2 / h) for t in r["tau"]))
+    check("Couette Q' = U h / 2", close(r["Q_per_width"], 0.2 * h / 2))
+
+    # 3. Gravity-driven vertical channel equals Poiseuille with -dp/dx = rho g
+    rg = solve(h, mu, rho, 90.0, 0.0)
+    rp = solve(h, mu, rho, 0.0, -rho * G_STANDARD)
+    check("Vertical gravity flow == Poiseuille with -dp/dx = rho g",
+          all(close(a, b) for a, b in zip(rg["u"], rp["u"])))
+
+    # 4. Pressure balancing gravity gives pure Couette (G = 0)
+    th = 30.0
+    r = solve(h, mu, rho, th, rho * G_STANDARD * math.sin(math.radians(th)), U_top=0.1)
+    check("dp/dx = rho g sin(theta) -> G = 0", abs(r["G"]) < 1e-9)
+    check("G = 0 -> linear profile",
+          all(close(u, 0.1 * y / h, abs_=1e-12) for y, u in zip(r["y"], r["u"])))
+
+    # 5. General case: BCs, ODE residual (finite differences), superposition, Q by quadrature
+    p = dict(h=0.004, mu=0.081, rho=910.0, theta_deg=40.0, dpdx=6000.0,
+             U_bottom=-0.03, U_top=0.05)
+    r = solve(n=401, **p)
+    check("No-slip at lower plate", close(r["u"][0], p["U_bottom"]))
+    check("No-slip at upper plate", close(r["u"][-1], p["U_top"]))
+    ys, us = r["y"], r["u"]
+    dy = ys[1] - ys[0]
+    G = r["G"]
+    res = max(abs(p["mu"] * (us[i + 1] - 2 * us[i] + us[i - 1]) / dy ** 2 + G)
+              for i in range(1, len(ys) - 1))
+    check("ODE residual mu u'' + G ~ 0 (finite differences)", res <= 1e-6 * abs(G))
+    c = r["components"]
+    sup = all(close(u, a + b + d, abs_=1e-14) for u, a, b, d in
+              zip(us, c["u_couette"], c["u_pressure"], c["u_gravity"]))
+    check("u = u_couette + u_pressure + u_gravity", sup)
+    simpson = dy / 3 * (us[0] + us[-1] + 4 * sum(us[1:-1:2]) + 2 * sum(us[2:-1:2]))
+    check("Q' matches Simpson quadrature of u", close(simpson, r["Q_per_width"], rel=1e-9))
+    fd_tau = [p["mu"] * (us[i + 1] - us[i - 1]) / (2 * dy) for i in range(1, len(ys) - 1)]
+    check("tau = mu du/dy (central differences)",
+          max(abs(a - b) for a, b in zip(fd_tau, r["tau"][1:-1])) <= 1e-8 * max(map(abs, r["tau"])))
+    for y0 in r["u_zero_crossings"]:
+        check(f"u(y0) = 0 at reported crossing y0/h = {y0 / p['h']:.4f}",
+              abs(velocity(y0, p["h"], p["mu"], G, p["U_bottom"], p["U_top"])) < 1e-12)
+    if r["y_zero_shear"] is not None:
+        check("tau = 0 at reported y*",
+              abs(shear_stress(r["y_zero_shear"], p["h"], p["mu"], G,
+                               p["U_bottom"], p["U_top"])) < 1e-9 * max(map(abs, r["tau"])))
+
+    # 6. Superposition sign sense: adverse gradient opposes, favorable aids
+    a = solve(h, mu, rho, 0.0, +500.0)["Q_per_width"]
+    f = solve(h, mu, rho, 0.0, -500.0)["Q_per_width"]
+    check("Adverse dp/dx > 0 gives Q' < 0, favorable gives Q' > 0", a < 0 < f)
+
+    # 7. Input validation
+    for bad in (dict(h=0), dict(mu=-1), dict(theta_deg=91)):
+        args = dict(h=h, mu=mu, rho=rho, theta_deg=0.0, dpdx=0.0)
+        args.update(bad)
+        try:
+            solve(**args)
+            ok = False
+        except ValueError:
+            ok = True
+        check(f"Rejects invalid input {bad}", ok)
+
+    # 8. Web wrapper round trip
+    out = json.loads(web_solve(json.dumps(dict(h=h, mu=mu, rho=rho, theta_deg=10,
+                                               dpdx=-100, U_bottom=0, U_top=0, n=5))))
+    check("web_solve returns ok JSON", out["ok"] and len(out["result"]["u"]) == 5)
+    bad = json.loads(web_solve(json.dumps(dict(h=-1, mu=mu, rho=rho, theta_deg=0, dpdx=0))))
+    check("web_solve reports errors", (not bad["ok"]) and "h" in bad["error"])
+
+    # 9. Symbolic derivation, if SymPy is available
+    try:
+        import sympy  # noqa: F401
+        have_sympy = True
+    except ImportError:
+        have_sympy = False
+        if verbose:
+            print("SKIP  symbolic derivation checks (SymPy not installed)")
+    if have_sympy:
+        d = derive_symbolic()
+        for k, v in d["checks"].items():
+            if isinstance(v, bool):
+                check(f"symbolic: {k}", v)
+
+    if verbose:
+        print(f"\n{'All checks passed.' if not failures else f'{len(failures)} check(s) FAILED.'}")
+    return not failures
+
+
+# ---------------------------------------------------------------------------
+# Command-line interface
+# ---------------------------------------------------------------------------
+
+def _print_summary(r):
+    i = r["inputs"]
+    print("Flow between parallel plates (Couette-Poiseuille with gravity)")
+    print("-" * 64)
+    print(f"  h = {i['h'] * 1e3:g} mm, mu = {i['mu']:g} Pa s, rho = {i['rho']:g} kg/m^3, "
+          f"theta = {i['theta_deg']:g} deg")
+    print(f"  dp/dx = {i['dpdx']:g} Pa/m, U_bottom = {i['U_bottom']:g} m/s, "
+          f"U_top = {i['U_top']:g} m/s, g = {i['g']:g} m/s^2")
+    print("-" * 64)
+    print(f"  G = -dp/dx + rho g sin(theta) = {r['G']:.6g} Pa/m "
+          f"(pressure {r['G_pressure']:.6g}, gravity {r['G_gravity']:.6g})")
+    print(f"  {r['equation_u']}   [m/s, y in m]")
+    print(f"  {r['equation_tau']}   [Pa, y in m]")
+    print(f"  Q' (per unit width) = {r['Q_per_width']:.6g} m^2/s")
+    print(f"  mean velocity       = {r['V_mean']:.6g} m/s")
+    print(f"  u_max = {r['u_max']:.6g} m/s at y/h = {r['y_umax'] / i['h']:.4f}")
+    print(f"  u_min = {r['u_min']:.6g} m/s at y/h = {r['y_umin'] / i['h']:.4f}")
+    print(f"  tau at lower plate = {r['tau_lower_wall']:.6g} Pa, "
+          f"at upper plate = {r['tau_upper_wall']:.6g} Pa")
+    print(f"  shear force/area on lower plate (+x) = {r['force_on_lower_plate']:.6g} Pa, "
+          f"upper plate = {r['force_on_upper_plate']:.6g} Pa")
+    print(f"  Re (rho max|u| h / mu) = {r['Re']:.4g}")
+    for note in r["notes"]:
+        print(f"  * {note}")
+
+
+def _plot(r, save=None):
+    import matplotlib.pyplot as plt
+
+    i = r["inputs"]
+    y_mm = [y * 1e3 for y in r["y"]]
+    c = r["components"]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5), sharey=True)
+    ax1.plot(r["u"], y_mm, "k", lw=2, label="u(y)")
+    ax1.plot(c["u_couette"], y_mm, "--", label="Couette part")
+    ax1.plot(c["u_pressure"], y_mm, "--", label="pressure part")
+    ax1.plot(c["u_gravity"], y_mm, "--", label="gravity part")
+    ax1.axvline(0, color="0.6", lw=0.8)
+    ax1.set_xlabel("u  [m/s]")
+    ax1.set_ylabel("y  [mm]")
+    ax1.set_title("Velocity profile")
+    ax1.legend(fontsize=8)
+    ax2.plot(r["tau"], y_mm, "k", lw=2, label="tau(y)")
+    ax2.axvline(0, color="0.6", lw=0.8)
+    ax2.set_xlabel("tau  [Pa]")
+    ax2.set_title("Shear stress")
+    for ax in (ax1, ax2):
+        ax.set_ylim(0, i["h"] * 1e3)
+        ax.grid(alpha=0.3)
+    fig.suptitle(f"theta = {i['theta_deg']:g} deg, dp/dx = {i['dpdx']:g} Pa/m, "
+                 f"U_b = {i['U_bottom']:g} m/s, U_t = {i['U_top']:g} m/s")
+    fig.tight_layout()
+    if save:
+        fig.savefig(save, dpi=150)
+        print(f"saved {save}")
+    else:
+        plt.show()
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        description="Laminar flow between inclined parallel plates "
+                    "(Couette-Poiseuille flow with gravity).")
+    ap.add_argument("--fluid", choices=sorted(FLUIDS), default="glycerin",
+                    help="fluid preset for mu and rho (default: glycerin)")
+    ap.add_argument("--mu", type=float, help="dynamic viscosity [Pa s] (overrides --fluid)")
+    ap.add_argument("--rho", type=float, help="density [kg/m^3] (overrides --fluid)")
+    ap.add_argument("--h-mm", type=float, default=10.0, help="plate spacing [mm] (default 10)")
+    ap.add_argument("--theta", type=float, default=0.0,
+                    help="inclination to horizontal [deg], 0-90 (default 0)")
+    ap.add_argument("--dpdx", type=float, default=0.0,
+                    help="pressure gradient along +x (down-slope) [Pa/m] (default 0)")
+    ap.add_argument("--u-bottom", type=float, default=0.0,
+                    help="lower plate velocity along +x [m/s] (0 = stationary)")
+    ap.add_argument("--u-top", type=float, default=0.0,
+                    help="upper plate velocity along +x [m/s] (0 = stationary)")
+    ap.add_argument("--g", type=float, default=G_STANDARD, help="gravity [m/s^2]")
+    ap.add_argument("-n", type=int, default=201, help="sample points across the gap")
+    ap.add_argument("--json", action="store_true", help="print the full result as JSON")
+    ap.add_argument("--csv", metavar="FILE", help="write y, u, tau profiles to CSV")
+    ap.add_argument("--plot", action="store_true", help="plot profiles (needs matplotlib)")
+    ap.add_argument("--save-plot", metavar="FILE", help="save the plot instead of showing it")
+    ap.add_argument("--derive", action="store_true",
+                    help="print the symbolic derivation (needs SymPy)")
+    ap.add_argument("--selftest", action="store_true", help="run built-in checks and exit")
+    a = ap.parse_args(argv)
+
+    if a.selftest:
+        return 0 if selftest() else 1
+
+    if a.derive:
+        d = derive_symbolic()
+        print(f"SymPy {d['sympy_version']}")
+        for s in d["steps"]:
+            print(f"\n{s['title']}:\n  {s['latex']}")
+        print(f"\nG definition: {d['G_definition']}")
+        print(f"u(y)   = {d['u']}\ntau(y) = {d['tau']}\nQ'     = {d['Q']}")
+        print("\nChecks:")
+        for k, v in d["checks"].items():
+            print(f"  {k}: {v}")
+        return 0 if d["checks"]["all_passed"] else 1
+
+    fl = FLUIDS[a.fluid]
+    mu = a.mu if a.mu is not None else fl["mu"]
+    rho = a.rho if a.rho is not None else fl["rho"]
+    r = solve(a.h_mm * 1e-3, mu, rho, a.theta, a.dpdx, a.u_bottom, a.u_top, a.g, a.n)
+
+    if a.json:
+        print(json.dumps(r, indent=2))
+    else:
+        _print_summary(r)
+    if a.csv:
+        with open(a.csv, "w") as f:
+            f.write("y_m,u_m_per_s,tau_Pa\n")
+            for y, u, t in zip(r["y"], r["u"], r["tau"]):
+                f.write(f"{y:.10g},{u:.10g},{t:.10g}\n")
+        print(f"wrote {a.csv}")
+    if a.plot or a.save_plot:
+        _plot(r, a.save_plot)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+</script>
+<!-- END parallel_plate_flow.py -->
+
+<script>
+(() => {
+'use strict';
+const PYODIDE_VERSION = '0.26.4';
+const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+const PY_FILE = 'parallel_plate_flow.py';
+const PY_SRC = document.getElementById('py-src').textContent.replace(/^\n/, '');
+
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+let api = null;          // {web_solve, web_derive, web_info}
+let result = null;       // last successful solve() result
+let lockedLims = null;   // {u:[a,b], t:[a,b]} when axes are locked
+
+// ---------------------------------------------------------------- formatting
+const SUP = {'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+function fmt(v, sig = 4) {
+  if (v === null || v === undefined || !isFinite(v)) return '—';
+  if (v === 0) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e-3 && a < 1e5) return String(Number(v.toPrecision(sig)));
+  const [m, e] = v.toExponential(sig - 1).split('e');
+  return `${Number(m)}×10${String(Number(e)).split('').map(c => SUP[c] || c).join('')}`;
+}
+function tex(el, s, display = false) {
+  if (window.katex) {
+    try { katex.render(s, el, {throwOnError: false, displayMode: display}); return; } catch (e) {}
+  }
+  el.textContent = s;
+}
+
+// ---------------------------------------------------------------- status
+function setStatus(text, state) {
+  $('statusText').textContent = text;
+  $('status').className = 'status' + (state ? ' ' + state : '');
+}
+
+// ---------------------------------------------------------------- inputs
+function pair(numId, rangeId) {
+  const n = $(numId), r = $(rangeId);
+  r.addEventListener('input', () => { n.value = r.value; schedule(); });
+  n.addEventListener('input', () => {
+    const v = parseFloat(n.value);
+    if (isFinite(v)) r.value = Math.min(Math.max(v, +r.min), +r.max);
+    schedule();
+  });
+}
+pair('h_n', 'h_r'); pair('th_n', 'th_r'); pair('dp_n', 'dp_r'); pair('ut_n', 'ut_r'); pair('ub_n', 'ub_r');
+const radio = name => document.querySelector(`input[name=${name}]:checked`).value;
+const setRadio = (name, v) => { document.querySelector(`input[name=${name}][value=${v}]`).checked = true; };
+document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => { syncEnabled(); schedule(); }));
+['showComp', 'animate'].forEach(id => $(id).addEventListener('change', () => { render(); }));
+$('lockAxes').addEventListener('change', () => { lockedLims = $('lockAxes').checked && result ? currentLims(result) : null; render(); });
+
+let FLUIDS = {glycerin: {label: 'Glycerin', mu: 1.41, rho: 1260}};
+$('fluid').addEventListener('change', () => {
+  const f = FLUIDS[$('fluid').value];
+  if (f) { $('mu').value = f.mu; $('rho').value = f.rho; }
+  schedule();
+});
+['mu', 'rho'].forEach(id => $(id).addEventListener('input', () => {
+  const f = FLUIDS[$('fluid').value];
+  if (f && (+$('mu').value !== f.mu || +$('rho').value !== f.rho)) $('fluid').value = 'custom';
+  schedule();
+}));
+
+function syncEnabled() {
+  const p = radio('pmode') !== 'zero', t = radio('tmode') === 'moving', b = radio('bmode') === 'moving';
+  ['dp_n', 'dp_r'].forEach(id => $(id).disabled = !p);
+  ['ut_n', 'ut_r'].forEach(id => $(id).disabled = !t);
+  ['ub_n', 'ub_r'].forEach(id => $(id).disabled = !b);
+}
+
+function readParams() {
+  const num = id => parseFloat($(id).value);
+  const pm = radio('pmode');
+  const mag = Math.abs(num('dp_n'));
+  return {
+    h: num('h_n') * 1e-3,
+    mu: num('mu'),
+    rho: num('rho'),
+    theta_deg: num('th_n'),
+    dpdx: pm === 'zero' ? 0 : (pm === 'neg' ? -mag : mag),
+    U_top: radio('tmode') === 'moving' ? num('ut_n') : 0,
+    U_bottom: radio('bmode') === 'moving' ? num('ub_n') : 0,
+    n: 201,
+  };
+}
+
+// ---------------------------------------------------------------- presets
+const PRESETS = [
+  {name: 'Plane Poiseuille', s: {theta: 0, pmode: 'neg', dp: 2000, t: 'fixed', b: 'fixed'}},
+  {name: 'Plane Couette', s: {theta: 0, pmode: 'zero', dp: 0, t: 'moving', ut: 0.1, b: 'fixed'}},
+  {name: 'Gravity, inclined', s: {theta: 30, pmode: 'zero', dp: 0, t: 'fixed', b: 'fixed'}},
+  {name: 'Vertical channel', s: {theta: 90, pmode: 'zero', dp: 0, t: 'fixed', b: 'fixed'}},
+  {name: 'Couette + adverse dp/dx', s: {theta: 0, pmode: 'pos', dp: 6000, t: 'moving', ut: 0.1, b: 'fixed'}},
+  {name: 'Pressure balances gravity', s: {theta: 30, pmode: 'pos', dp: 6180.3, t: 'moving', ut: 0.1, b: 'fixed'}},
+  {name: 'Counter-moving plates', s: {theta: 0, pmode: 'zero', dp: 0, t: 'moving', ut: 0.05, b: 'moving', ub: -0.05}},
+  {name: 'Uphill pumping', s: {theta: 20, pmode: 'pos', dp: 9000, t: 'fixed', b: 'fixed'}},
+];
+function applyPreset(s) {
+  $('fluid').value = 'glycerin';
+  const f = FLUIDS.glycerin; $('mu').value = f.mu; $('rho').value = f.rho;
+  $('h_n').value = 10; $('h_r').value = 10;
+  $('th_n').value = s.theta; $('th_r').value = s.theta;
+  setRadio('pmode', s.pmode); $('dp_n').value = s.dp; $('dp_r').value = Math.min(s.dp, 20000);
+  setRadio('tmode', s.t); if (s.ut !== undefined) { $('ut_n').value = s.ut; $('ut_r').value = s.ut; }
+  setRadio('bmode', s.b); if (s.ub !== undefined) { $('ub_n').value = s.ub; $('ub_r').value = s.ub; }
+  syncEnabled(); schedule();
+}
+PRESETS.forEach(p => {
+  const b = document.createElement('button');
+  b.textContent = p.name; b.type = 'button';
+  b.addEventListener('click', () => applyPreset(p.s));
+  $('presets').appendChild(b);
+});
+syncEnabled();
+
+// ---------------------------------------------------------------- compute
+let pending = false;
+function schedule() {
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => { pending = false; compute(); });
+}
+function compute() {
+  if (!api) return;
+  const p = readParams();
+  updateReproduce(p);
+  for (const k of ['h', 'mu', 'rho', 'theta_deg']) {
+    if (!isFinite(p[k])) { showError(`Enter a number for ${k === 'theta_deg' ? 'θ' : k}.`); return; }
+  }
+  const out = JSON.parse(api.web_solve(JSON.stringify(p)));
+  if (!out.ok) { showError(out.error.replace(/^ValueError: /, '')); return; }
+  $('err').textContent = '';
+  result = out.result;
+  if (lockedLims === null && $('lockAxes').checked) lockedLims = currentLims(result);
+  resetParticlesIfNeeded();
+  render();
+}
+function showError(msg) { $('err').textContent = msg; }
+
+// ---------------------------------------------------------------- canvas helpers
+function prep(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return {ctx, W: w, H: h};
+}
+function arrow(ctx, x0, y0, x1, y1, color, width = 1.6, head = 7) {
+  const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy);
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width;
+  if (L < 0.5) return;
+  const hd = Math.min(head, L * 0.6), ux = dx / L, uy = dy / L;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - ux * hd * 0.6, y1 - uy * hd * 0.6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 - ux * hd - uy * hd * 0.45, y1 - uy * hd + ux * hd * 0.45);
+  ctx.lineTo(x1 - ux * hd + uy * hd * 0.45, y1 - uy * hd - ux * hd * 0.45);
+  ctx.closePath(); ctx.fill();
+}
+function niceTicks(a, b, n = 5) {
+  const span = b - a; if (!(span > 0)) return [a];
+  const raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || 10 * mag;
+  const out = [];
+  for (let v = Math.ceil(a / step - 1e-9) * step; v <= b + step * 1e-9; v += step) out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+  return out;
+}
+function tickLabel(v, ticks) {
+  const step = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : Math.abs(v) || 1;
+  const big = Math.max(...ticks.map(Math.abs));
+  if (big >= 1e5 || (big > 0 && big < 1e-3)) return fmt(v, 3);
+  const dec = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  return v.toFixed(Math.min(dec, 6));
+}
+function range(arrs, pad = 0.08) {
+  let lo = 0, hi = 0;
+  for (const a of arrs) for (const v of a) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  if (hi - lo === 0) { hi = 1; lo = -1; }
+  const p = (hi - lo) * pad;
+  return [lo - (lo < 0 ? p : 0), hi + (hi > 0 ? p : 0)];
+}
+
+// profile plot: x = quantity, y = position across gap (mm)
+function profilePlot(cv, o) {
+  const {ctx, W, H} = prep(cv);
+  const m = {l: 50, r: 14, t: 12, b: 42};
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const [x0, x1] = o.xlim, [y0, y1] = o.ylim;
+  const X = v => m.l + (v - x0) / (x1 - x0) * pw;
+  const Y = v => m.t + ph - (v - y0) / (y1 - y0) * ph;
+  const grid = css('--line'), muted = css('--muted'), ink = css('--ink');
+  ctx.font = `11.5px ${css('--sans')}`;
+  // plates
+  ctx.fillStyle = css('--soft');
+  ctx.fillRect(m.l, Y(y1) - 6, pw, 6); ctx.fillRect(m.l, Y(y0), pw, 6);
+  // grid + ticks
+  const xt = niceTicks(x0, x1, Math.max(3, Math.round(pw / 80)));
+  const yt = niceTicks(y0, y1, 5);
+  ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.fillStyle = muted;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const v of xt) { ctx.beginPath(); ctx.moveTo(X(v), m.t); ctx.lineTo(X(v), m.t + ph); ctx.stroke(); ctx.fillText(tickLabel(v, xt), X(v), m.t + ph + 9); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const v of yt) { ctx.beginPath(); ctx.moveTo(m.l, Y(v)); ctx.lineTo(m.l + pw, Y(v)); ctx.stroke(); ctx.fillText(tickLabel(v, yt), m.l - 6, Y(v)); }
+  // zero axis
+  if (x0 < 0 && x1 > 0) { ctx.strokeStyle = muted; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(X(0), m.t); ctx.lineTo(X(0), m.t + ph); ctx.stroke(); }
+  // labels
+  ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(o.xlabel, m.l + pw / 2, H - 2);
+  ctx.save(); ctx.translate(13, m.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle'; ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t - 2, pw, ph + 4); ctx.clip();
+  if (o.arrows) {
+    const k = Math.max(1, Math.floor(o.arrows.y.length / 12));
+    for (let i = 0; i < o.arrows.y.length; i += k) {
+      const yy = Y(o.arrows.y[i]);
+      arrow(ctx, X(0), yy, X(o.arrows.x[i]), yy, o.arrows.color, 1.1, 6);
+    }
+  }
+  for (const s of o.series) {
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.setLineDash(s.dash || []);
+    ctx.beginPath();
+    s.x.forEach((v, i) => { const px = X(v), py = Y(s.y[i]); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  if (o.marker) {
+    ctx.strokeStyle = o.marker.color; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(m.l, Y(o.marker.y)); ctx.lineTo(m.l + pw, Y(o.marker.y)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = o.marker.color; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(o.marker.label, m.l + 6, Y(o.marker.y) - 2);
+  }
+  ctx.restore();
+  ctx.strokeStyle = muted; ctx.lineWidth = 1; ctx.strokeRect(m.l, m.t, pw, ph);
+}
+
+function currentLims(r) {
+  const c = r.components;
+  return {u: range([r.u, c.u_couette, c.u_pressure, c.u_gravity]), t: range([r.tau, c.tau_couette, c.tau_pressure, c.tau_gravity])};
+}
+
+// ---------------------------------------------------------------- schematic
+let particles = [], particleKey = '';
+function resetParticlesIfNeeded() {
+  const key = `${result.inputs.h}`;
+  if (key === particleKey && particles.length) return;
+  particleKey = key;
+  particles = Array.from({length: 90}, () => ({x: Math.random(), y: 0.03 + 0.94 * Math.random()}));
+}
+function uAt(yfrac) {   // linear interpolation of Python's u(y) samples
+  const n = result.u.length, f = yfrac * (n - 1), i = Math.min(n - 2, Math.max(0, Math.floor(f))), t = f - i;
+  return result.u[i] * (1 - t) + result.u[i + 1] * t;
+}
+
+function drawSchematic() {
+  const cv = $('schem'); const {ctx, W, H} = prep(cv);
+  if (!result) return;
+  const r = result, inp = r.inputs, th = inp.theta_deg * Math.PI / 180;
+  const c = Math.cos(th), s = Math.sin(th);
+  const ratio = 3.2, tp = 0.16;                 // channel length / gap, plate thickness / gap
+  const mx = 30, my = 46;
+  const gap = Math.min((W - 2 * mx) / (ratio * c + (1 + 2 * tp) * s), (H - 2 * my) / (ratio * s + (1 + 2 * tp) * c));
+  const L = ratio * gap;
+  const cx = W / 2, cy = H / 2;
+  // local (x along channel, y across gap measured from lower plate, both in px) -> screen
+  const P = (x, y) => { const X = x - L / 2, Y = -(y - gap / 2); return [cx + X * c - Y * s, cy + X * s + Y * c]; };
+  const poly = (pts, fill, stroke) => {
+    ctx.beginPath(); pts.forEach(([x, y], i) => { const q = P(x, y); i ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+  };
+  const t = tp * gap;
+  const ink = css('--ink'), muted = css('--muted');
+  ctx.font = `12px ${css('--sans')}`;
+
+  // fluid and plates
+  poly([[0, 0], [L, 0], [L, gap], [0, gap]], css('--fluid'));
+  const plateFill = css('--plate'), plateDark = css('--plate-dark');
+  for (const [ya, yb] of [[-t, 0], [gap, gap + t]]) {
+    poly([[0, ya], [L, ya], [L, yb], [0, yb]], plateFill, plateDark);
+    ctx.save(); ctx.beginPath(); [[0, ya], [L, ya], [L, yb], [0, yb]].forEach(([x, y], i) => { const q = P(x, y); i ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.closePath(); ctx.clip();
+    ctx.strokeStyle = plateDark; ctx.lineWidth = 1;
+    for (let x = -t; x < L + t; x += 9) { ctx.beginPath(); ctx.moveTo(...P(x, ya)); ctx.lineTo(...P(x + t, yb)); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  // horizontal reference and angle arc at the downstream end of the lower plate's outer face
+  // (the wedge between the leftward horizontal and the plate lies outside the channel)
+  if (inp.theta_deg > 0.5) {
+    const [ox, oy] = P(L, -t);
+    const R = Math.min(56, L * 0.3);
+    ctx.strokeStyle = muted; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox - Math.min(L * 0.45, W * 0.3), oy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(ox, oy, R, Math.PI, Math.PI + th); ctx.stroke();
+    ctx.fillStyle = ink; ctx.textAlign = 'right'; ctx.textBaseline = th > 0.5 ? 'middle' : 'top';
+    const a = Math.PI + th / 2;
+    ctx.fillText(`θ = ${fmt(inp.theta_deg, 3)}°`, ox + (R + 6) * Math.cos(a), oy + (R + 6) * Math.sin(a) + (th > 0.5 ? 0 : 4));
+  }
+
+  // velocity scale shared by profile arrows and plate arrows
+  const umax = Math.max(Math.abs(r.u_max), Math.abs(r.u_min), 1e-300);
+  const k = (0.26 * L) / umax;
+
+  // particles
+  ctx.fillStyle = css('--particle');
+  ctx.globalAlpha = 0.55;
+  for (const p of particles) { const [px, py] = P(p.x * L, p.y * gap); ctx.beginPath(); ctx.arc(px, py, 2.1, 0, 2 * Math.PI); ctx.fill(); }
+  ctx.globalAlpha = 1;
+
+  // velocity profile at one station
+  const xs = 0.5 * L;
+  ctx.strokeStyle = muted; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(...P(xs, 0)); ctx.lineTo(...P(xs, gap)); ctx.stroke();
+  const vel = css('--vel');
+  const n = r.y.length, step = Math.max(1, Math.round((n - 1) / 14));
+  for (let i = 0; i < n; i += step) {
+    const yf = r.y[i] / inp.h;
+    const a = P(xs, yf * gap), b = P(xs + r.u[i] * k, yf * gap);
+    arrow(ctx, a[0], a[1], b[0], b[1], vel, 1.4, 6);
+  }
+  ctx.strokeStyle = vel; ctx.lineWidth = 2.2; ctx.beginPath();
+  r.y.forEach((y, i) => { const q = P(xs + r.u[i] * k, y / inp.h * gap); i ? ctx.lineTo(...q) : ctx.moveTo(...q); });
+  ctx.stroke();
+
+  // plate velocity arrows (inside the plate bands)
+  const plateArrow = (U, ymid, label, anchor) => {
+    const x0 = 0.1 * L;
+    const a = P(x0, ymid), b = P(x0 + U * k, ymid);
+    if (Math.abs(U) > 0) arrow(ctx, a[0], a[1], b[0], b[1], ink, 2.2, 8);
+    ctx.fillStyle = ink; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(label + (U === 0 ? ': stationary' : `: U = ${fmt(U, 3)} m/s`), 4, anchor === 'top' ? 4 : 22);
+  };
+  plateArrow(inp.U_top, gap + t / 2, 'Upper plate (y = h)', 'top');
+  plateArrow(inp.U_bottom, -t / 2, 'Lower plate (y = 0)', 'bottom');
+
+  // axes triad near the right end of the channel
+  const [ax, ay] = P(L * 0.82, gap * 0.22);
+  const ex = [c, s], ey = [s, -c];   // screen directions of +x and +y
+  const Lt = Math.min(34, gap * 0.55);
+  arrow(ctx, ax, ay, ax + ex[0] * Lt, ay + ex[1] * Lt, muted, 1.3, 6);
+  arrow(ctx, ax, ay, ax + ey[0] * Lt * 0.8, ay + ey[1] * Lt * 0.8, muted, 1.3, 6);
+  ctx.fillStyle = muted; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('x', ax + ex[0] * (Lt + 9), ay + ex[1] * (Lt + 9));
+  ctx.fillText('y', ax + ey[0] * (Lt * 0.8 + 9), ay + ey[1] * (Lt * 0.8 + 9));
+
+  // gravity
+  const gx = W - 30, gy = 18;
+  arrow(ctx, gx, gy, gx, gy + 40, css('--grav'), 2, 8);
+  ctx.fillStyle = css('--grav'); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('g', gx - 8, gy + 20);
+}
+
+// ---------------------------------------------------------------- results panel
+function forceBars(r) {
+  const items = [
+    ['Pressure, −dp/dx', r.G_pressure, '--pres'],
+    ['Gravity, ρg sin θ', r.G_gravity, '--grav'],
+    ['Net driving, G', r.G, '--ink'],
+  ];
+  const big = Math.max(...items.map(i => Math.abs(i[1])), 1e-300);
+  $('forces').innerHTML = '';
+  for (const [name, v, col] of items) {
+    const lab = document.createElement('div'); lab.textContent = name;
+    const bar = document.createElement('div'); bar.className = 'bar';
+    const b = document.createElement('b'); b.style.background = css(col);
+    const w = Math.abs(v) / big * 50;
+    b.style.left = (v >= 0 ? 50 : 50 - w) + '%'; b.style.width = w + '%';
+    bar.appendChild(b);
+    const val = document.createElement('div'); val.className = 'v'; val.textContent = `${fmt(v, 4)} Pa/m`;
+    $('forces').append(lab, bar, val);
+  }
+  const note = document.createElement('div');
+  note.className = 'small'; note.style.gridColumn = '1/-1';
+  note.textContent = 'Bars to the right push fluid toward +x (down the incline); bars to the left push toward −x.';
+  $('forces').appendChild(note);
+}
+
+function stat(k, v, u) { return `<div class="stat"><div class="k">${k}</div><div class="v">${v} <span class="u">${u || ''}</span></div></div>`; }
+
+function renderStats(r) {
+  const h = r.inputs.h;
+  const yz = r.y_zero_shear === null ? '—' : fmt(r.y_zero_shear / h, 3);
+  $('stats').innerHTML = [
+    stat('Flow rate per unit width, Q′', fmt(r.Q_per_width, 4), 'm²/s'),
+    stat('Mean velocity, Q′/h', fmt(r.V_mean, 4), 'm/s'),
+    stat('Maximum u', fmt(r.u_max, 4), `m/s at y/h = ${fmt(r.y_umax / h, 3)}`),
+    stat('Minimum u', fmt(r.u_min, 4), `m/s at y/h = ${fmt(r.y_umin / h, 3)}`),
+    stat('τ at lower plate, τ(0)', fmt(r.tau_lower_wall, 4), 'Pa'),
+    stat('τ at upper plate, τ(h)', fmt(r.tau_upper_wall, 4), 'Pa'),
+    stat('Zero shear at y*/h', yz, ''),
+    stat('Reynolds number, ρ·max|u|·h/μ', fmt(r.Re, 3), ''),
+  ].join('');
+  tex($('eqU'), r.equation_u_latex + '\\;\\;\\mathrm{[m/s]}');
+  tex($('eqT'), r.equation_tau_latex + '\\;\\;\\mathrm{[Pa]}');
+  const ul = $('notes'); ul.innerHTML = '';
+  r.notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; if (/^Re =/.test(n)) li.className = 'warn'; ul.appendChild(li); });
+  const fl = document.createElement('li');
+  fl.textContent = `Shear force per unit area exerted by the fluid on the plates (+x): lower ${fmt(r.force_on_lower_plate, 4)} Pa, upper ${fmt(r.force_on_upper_plate, 4)} Pa.`;
+  ul.appendChild(fl);
+}
+
+function legend(el, items) {
+  el.innerHTML = items.map(([lab, col, dash]) => `<span style="color:${col}"><i class="${dash ? 'd' : ''}"></i><span style="color:var(--muted)">${lab}</span></span>`).join('');
+}
+
+function render() {
+  if (!result) return;
+  const r = result, h = r.inputs.h, ymm = r.y.map(v => v * 1e3), comp = $('showComp').checked, c = r.components;
+  const lims = lockedLims || currentLims(r);
+  const C = {vel: css('--vel'), tau: css('--tau'), cou: css('--cou'), pres: css('--pres'), grav: css('--grav')};
+  const marker = r.y_zero_shear === null ? null : {y: r.y_zero_shear * 1e3, color: css('--muted'), label: 'τ = 0'};
+  const uS = [], tS = [];
+  if (comp) {
+    uS.push({x: c.u_couette, y: ymm, color: C.cou, width: 1.5, dash: [6, 4]},
+            {x: c.u_pressure, y: ymm, color: C.pres, width: 1.5, dash: [6, 4]},
+            {x: c.u_gravity, y: ymm, color: C.grav, width: 1.5, dash: [6, 4]});
+    tS.push({x: c.tau_couette, y: ymm, color: C.cou, width: 1.5, dash: [6, 4]},
+            {x: c.tau_pressure, y: ymm, color: C.pres, width: 1.5, dash: [6, 4]},
+            {x: c.tau_gravity, y: ymm, color: C.grav, width: 1.5, dash: [6, 4]});
+  }
+  uS.push({x: r.u, y: ymm, color: C.vel, width: 2.6});
+  tS.push({x: r.tau, y: ymm, color: C.tau, width: 2.6});
+  profilePlot($('uPlot'), {xlim: lims.u, ylim: [0, h * 1e3], xlabel: 'u  [m/s]', ylabel: 'y  [mm]', series: uS,
+    arrows: {x: r.u, y: ymm, color: C.vel}, marker});
+  profilePlot($('tPlot'), {xlim: lims.t, ylim: [0, h * 1e3], xlabel: 'τ  [Pa]', ylabel: 'y  [mm]', series: tS, marker});
+  const parts = comp ? [['Couette (plates)', C.cou, 1], ['pressure', C.pres, 1], ['gravity', C.grav, 1]] : [];
+  legend($('uLegend'), [['total u(y)', C.vel, 0], ...parts]);
+  legend($('tLegend'), [['total τ(y)', C.tau, 0], ...parts]);
+  forceBars(r);
+  renderStats(r);
+  drawSchematic();
+}
+
+// ---------------------------------------------------------------- animation
+let last = performance.now();
+function tick(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (result && $('animate').checked && document.visibilityState === 'visible') {
+    const umax = Math.max(Math.abs(result.u_max), Math.abs(result.u_min));
+    if (umax > 0) {
+      const k = 0.22 / umax;   // fraction of channel length per second at max speed
+      for (const p of particles) {
+        p.x += uAt(p.y) * k * dt;
+        p.x -= Math.floor(p.x);
+      }
+    }
+    drawSchematic();
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 80); });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render);
+
+// ---------------------------------------------------------------- reproduce / source
+function updateReproduce(p) {
+  const f = $('fluid').value;
+  const parts = ['python parallel_plate_flow.py'];
+  if (FLUIDS[f]) parts.push(`--fluid ${f}`); else parts.push(`--mu ${p.mu} --rho ${p.rho}`);
+  parts.push(`--h-mm ${+(p.h * 1e3).toPrecision(6)}`, `--theta ${p.theta_deg}`, `--dpdx ${p.dpdx}`);
+  if (p.U_bottom) parts.push(`--u-bottom ${p.U_bottom}`);
+  if (p.U_top) parts.push(`--u-top ${p.U_top}`);
+  parts.push('--plot');
+  $('cli').textContent = parts.join(' ');
+  $('api').textContent =
+`from parallel_plate_flow import solve
+r = solve(h=${+p.h.toPrecision(6)}, mu=${p.mu}, rho=${p.rho}, theta_deg=${p.theta_deg},
+          dpdx=${p.dpdx}, U_bottom=${p.U_bottom}, U_top=${p.U_top})
+print(r["equation_u"], r["Q_per_width"])`;
+}
+function copy(text, btn, label) {
+  const done = ok => { btn.textContent = ok ? 'Copied' : 'Copy failed'; setTimeout(() => btn.textContent = label, 1500); };
+  try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (e) { done(false); }
+}
+$('copyCli').addEventListener('click', e => copy($('cli').textContent, e.target, 'Copy command'));
+$('copyPy').addEventListener('click', e => copy(PY_SRC, e.target, 'Copy source'));
+$('dlPy').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([PY_SRC], {type: 'text/x-python'}));
+  a.download = PY_FILE; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+});
+$('srcView').textContent = PY_SRC;
+updateReproduce(readParams());
+
+// ---------------------------------------------------------------- derivation
+let lastDeriv = null;
+function renderDerivation(out) {
+  lastDeriv = out;
+  const el = $('deriv'); el.className = '';
+  if (!out.ok) { el.className = 'err'; el.textContent = 'Symbolic derivation failed: ' + out.error; return; }
+  const d = out.result;
+  const ol = document.createElement('ol'); ol.className = 'steps';
+  for (const s of d.steps) {
+    const li = document.createElement('li');
+    const t = document.createElement('div'); t.className = 't'; t.textContent = s.title;
+    const m = document.createElement('div'); m.className = 'eq'; tex(m, s.latex, true);
+    li.append(t, m);
+    if (s.note_latex) {
+      const n = document.createElement('div'); n.className = 'eq';
+      const sp = document.createElement('span'); tex(sp, s.note_latex, false);
+      n.append(document.createTextNode((s.note || '') + ' '), sp); li.appendChild(n);
+    }
+    ol.appendChild(li);
+  }
+  el.innerHTML = ''; el.appendChild(ol);
+  const ck = d.checks;
+  const lab = {ode_residual_zero: 'ODE residual μu″ + G = 0', bc_lower_satisfied: 'u(0) = U_b', bc_upper_satisfied: 'u(h) = U_t',
+    matches_superposed_form: 'matches superposed form', tau_matches: 'τ(y) matches', Q_matches: 'Q′ matches',
+    numeric_matches_solver: 'agrees with the numerical solver'};
+  const box = document.createElement('div'); box.className = 'checks';
+  box.innerHTML = '<strong style="font-size:13px">SymPy checks:</strong> ' + Object.keys(lab).map(k =>
+    `<span class="${ck[k] ? 'ok' : 'no'}">${ck[k] ? '✓' : '✗'} ${lab[k]}</span>`).join('');
+  el.appendChild(box);
+  const v = $('versions'); v.textContent += ` · SymPy ${d.sympy_version}`;
+}
+
+// ---------------------------------------------------------------- boot
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => rej(new Error('Could not download ' + src)); document.head.appendChild(s);
+  });
+}
+async function boot() {
+  try {
+    await loadScript(PYODIDE_BASE + 'pyodide.js');
+    setStatus('Starting Python…');
+    const py = await loadPyodide({indexURL: PYODIDE_BASE});
+    const dir = '/home/pyodide';
+    py.FS.writeFile(`${dir}/${PY_FILE}`, PY_SRC);
+    py.runPython(`import sys\nif ${JSON.stringify(dir)} not in sys.path: sys.path.insert(0, ${JSON.stringify(dir)})`);
+    const mod = py.pyimport('parallel_plate_flow');
+    api = {web_solve: s => mod.web_solve(s), web_derive: () => mod.web_derive(), web_info: () => mod.web_info()};
+    const info = JSON.parse(api.web_info());
+    FLUIDS = info.fluids;
+    const sel = $('fluid'), cur = sel.value;
+    sel.innerHTML = Object.entries(FLUIDS).map(([k, f]) => `<option value="${k}">${f.label}</option>`).join('') + '<option value="custom">Custom</option>';
+    sel.value = FLUIDS[cur] ? cur : 'custom';
+    $('versions').textContent = `parallel_plate_flow ${info.version} · Python ${info.python} · Pyodide ${PYODIDE_VERSION}`;
+    ['schemCard', 'uCard', 'tCard'].forEach(id => $(id).classList.remove('busy'));
+    setStatus('Python ready. Loading SymPy for the derivation…', 'ready');
+    compute();
+    try {
+      await py.loadPackage('sympy');
+      renderDerivation(JSON.parse(api.web_derive()));
+      setStatus(`Python ${info.python} running in your browser (Pyodide ${PYODIDE_VERSION}).`, 'ready');
+    } catch (e) {
+      renderDerivation({ok: false, error: String(e.message || e)});
+      setStatus('Python ready. SymPy could not be loaded, so the derivation is unavailable.', 'ready');
+    }
+  } catch (e) {
+    setStatus('Could not start Python: ' + (e.message || e) + '. Check your connection and reload.', 'error');
+  }
+}
+window.addEventListener('load', () => { if (result) render(); if (lastDeriv) { $('versions').textContent = $('versions').textContent.replace(/ · SymPy .*/, ''); renderDerivation(lastDeriv); } });  // re-typeset once KaTeX arrives
+boot();
+})();
+</script>
+</body>
+</html>
