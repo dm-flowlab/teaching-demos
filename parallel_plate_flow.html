@@ -78,15 +78,12 @@ canvas{display:block;width:100%}
 .plots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 @media (max-width:640px){.plots{grid-template-columns:minmax(0,1fr)}}
 .plot canvas{height:330px}
+.plots .card{margin-top:0;display:flex;flex-direction:column}
+.plot h3{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);margin-top:6px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid currentColor}
 .legend i.d{border-top-style:dashed}
-.forces{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:13px}
-.bar{position:relative;height:12px;background:var(--soft);border-radius:3px}
-.bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1px solid var(--muted)}
-.bar b{position:absolute;top:0;bottom:0;border-radius:3px}
-.forces .v{font-family:var(--mono);font-size:12.5px;text-align:right;min-width:92px}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
 .stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg)}
 .stat .k{font-size:12px;color:var(--muted)}
@@ -98,13 +95,8 @@ canvas{display:block;width:100%}
 .eq{overflow-x:auto;padding:4px 0;font-family:var(--mono);font-size:14px}
 .eq .katex{font-size:1.08em}
 .small{font-size:12.5px;color:var(--muted)}
-.steps{counter-reset:s;margin:0;padding:0;list-style:none}
-.steps li{counter-increment:s;padding:10px 0;border-top:1px solid var(--line)}
-.steps li:first-child{border-top:0}
-.steps .t{font-size:13px;font-weight:600;color:var(--muted)}
-.steps .t::before{content:counter(s) ". "}
-.checks{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;margin-top:8px}
-.checks .ok{color:var(--ok)} .checks .no{color:var(--bad)}
+.problem p{margin:0 0 8px;max-width:860px}
+.problem p:last-child{margin-bottom:0}
 pre{margin:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;font:12.5px/1.5 var(--mono);max-height:520px;white-space:pre}
 .code-inline{font:13px var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;overflow-x:auto;white-space:pre}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
@@ -121,7 +113,7 @@ footer{margin-top:28px;font-size:12.5px;color:var(--muted)}
 <div class="wrap">
 <header>
   <h1>Flow Between Parallel Plates</h1>
-  <p>Steady, fully developed laminar flow between two infinite plates inclined at θ to the horizontal, driven by any combination of plate motion, a pressure gradient along the plates and gravity. The profiles come from the exact plane Couette–Poiseuille solution, computed in Python running in your browser.</p>
+  <p>An interactive simulator for viscous flow between two parallel plates under the combined action of plate motion, a pressure gradient and gravity. All results are computed in Python running in your browser.</p>
 </header>
 
 <div class="status" id="status" role="status"><span class="dot"></span><span id="statusText">Loading Python runtime (Pyodide)…</span></div>
@@ -189,29 +181,39 @@ footer{margin-top:28px;font-size:12.5px;color:var(--muted)}
     <label class="check"><input type="checkbox" id="lockAxes"> Lock plot axes (compare cases)</label>
     <label class="check"><input type="checkbox" id="animate" checked> Animate tracer particles</label>
   </div>
+
+  <div class="card">
+    <h2>Python code</h2>
+    <p class="small" style="margin:0 0 6px">This page runs <code>parallel_plate_flow.py</code> unchanged. The file also runs from the command line and includes a self-test (<code>--selftest</code>).</p>
+    <div class="btns"><button id="dlPy" class="primary">Download parallel_plate_flow.py</button><button id="copyPy">Copy source</button></div>
+    <p class="small" id="versions" style="margin:4px 0 0"></p>
+  </div>
 </aside>
 
 <!-- ======================= RESULTS ======================= -->
 <main>
-  <div class="card loading-veil busy" id="schemCard">
+  <div class="card problem">
+    <h2>Problem</h2>
+    <p>A Newtonian fluid of viscosity μ and density ρ fills the gap of width h between two infinite parallel plates inclined at an angle θ (0–90°) to the horizontal. Each plate is either held fixed or slides in its own plane at a constant velocity: U<sub>b</sub> for the lower plate and U<sub>t</sub> for the upper plate. A constant pressure gradient dp/dx, favorable or adverse, may be imposed along the plates, and gravity acts vertically downward.</p>
+    <p><strong>Coordinates.</strong> x runs along the plates, pointing down the incline; y is normal to the plates, from the lower plate (y = 0) to the upper plate (y = h). Plate velocities are positive in +x.</p>
+    <p><strong>Assume</strong> steady, incompressible, laminar, fully developed flow with no slip at both plates.</p>
+    <p><strong>Your task.</strong> Derive the velocity profile u(y), the shear stress τ(y) and the volume flow rate per unit width Q′ in terms of μ, ρ, g, θ, h, dp/dx, U<sub>b</sub> and U<sub>t</sub>. Use the simulator to explore how each driving mechanism shapes the flow, then check your expressions against the results it reports for the same inputs.</p>
+  </div>
+
+  <div class="card loading-veil busy" id="schemCard" style="margin-top:12px">
     <h2>Channel</h2>
     <canvas id="schem" aria-label="Schematic of the inclined channel with velocity profile and moving tracer particles"></canvas>
     <p class="small" style="margin:6px 0 0">Arrows show u(y) at one station, drawn to the same scale as the plate-velocity arrows. Particle speeds are scaled for viewing.</p>
   </div>
 
-  <div class="card">
-    <h2>Driving forces per unit volume along +x</h2>
-    <div class="forces" id="forces"></div>
-  </div>
-
   <div class="plots">
     <div class="card plot loading-veil busy" id="uCard">
-      <h3>Velocity profile u(y)</h3>
+      <h3>Velocity profile, u(y)</h3>
       <canvas id="uPlot" aria-label="Velocity profile plot"></canvas>
       <div class="legend" id="uLegend"></div>
     </div>
     <div class="card plot loading-veil busy" id="tCard">
-      <h3>Shear stress τ(y) = μ du/dy</h3>
+      <h3>Shear stress, τ(y) = μ du/dy</h3>
       <canvas id="tPlot" aria-label="Shear stress profile plot"></canvas>
       <div class="legend" id="tLegend"></div>
     </div>
@@ -228,25 +230,11 @@ footer{margin-top:28px;font-size:12.5px;color:var(--muted)}
   </div>
 
   <div class="card" style="margin-top:12px">
-    <h2>Derivation</h2>
-    <p style="margin:0 0 8px">Assumptions: steady, incompressible, laminar flow of a Newtonian fluid with constant μ and ρ between infinite plates; fully developed, so ∂u/∂x = 0, continuity gives v = 0 and u = u(y). The y-momentum equation, 0 = −∂p/∂y − ρg cos θ, makes the pressure hydrostatic across the gap, so dp/dx is the same at every y. The x-momentum equation then reduces to an ODE that SymPy integrates below.</p>
-    <div id="deriv" class="small">Waiting for SymPy to load…</div>
-  </div>
-
-  <div class="two" style="margin-top:12px">
-    <div class="card">
-      <h2>Reproduce this case</h2>
-      <p class="small" style="margin:0 0 6px">Run the same Python file locally with the current inputs:</p>
-      <div class="code-inline" id="cli"></div>
-      <div class="btns"><button id="copyCli">Copy command</button></div>
-      <div class="code-inline" id="api"></div>
-    </div>
-    <div class="card">
-      <h2>Python source</h2>
-      <p class="small" style="margin:0 0 6px">This page runs <code>parallel_plate_flow.py</code>, embedded below, unchanged. The file also runs from the command line and includes a self-test (<code>--selftest</code>).</p>
-      <div class="btns"><button id="dlPy" class="primary">Download parallel_plate_flow.py</button><button id="copyPy">Copy source</button></div>
-      <p class="small" id="versions" style="margin:4px 0 0"></p>
-    </div>
+    <h2>Reproduce this case</h2>
+    <p class="small" style="margin:0 0 6px">Run the same Python file locally with the current inputs:</p>
+    <div class="code-inline" id="cli"></div>
+    <div class="btns"><button id="copyCli">Copy command</button></div>
+    <div class="code-inline" id="api"></div>
   </div>
   <div class="card" style="margin-top:12px">
     <details><summary>View Python source</summary><pre id="srcView" style="margin-top:10px"></pre></details>
@@ -1040,7 +1028,7 @@ const PY_SRC = document.getElementById('py-src').textContent.replace(/^\n/, '');
 const $ = id => document.getElementById(id);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-let api = null;          // {web_solve, web_derive, web_info}
+let api = null;          // {web_solve, web_info}
 let result = null;       // last successful solve() result
 let lockedLims = null;   // {u:[a,b], t:[a,b]} when axes are locked
 
@@ -1387,30 +1375,6 @@ function drawSchematic() {
 }
 
 // ---------------------------------------------------------------- results panel
-function forceBars(r) {
-  const items = [
-    ['Pressure, −dp/dx', r.G_pressure, '--pres'],
-    ['Gravity, ρg sin θ', r.G_gravity, '--grav'],
-    ['Net driving, G', r.G, '--ink'],
-  ];
-  const big = Math.max(...items.map(i => Math.abs(i[1])), 1e-300);
-  $('forces').innerHTML = '';
-  for (const [name, v, col] of items) {
-    const lab = document.createElement('div'); lab.textContent = name;
-    const bar = document.createElement('div'); bar.className = 'bar';
-    const b = document.createElement('b'); b.style.background = css(col);
-    const w = Math.abs(v) / big * 50;
-    b.style.left = (v >= 0 ? 50 : 50 - w) + '%'; b.style.width = w + '%';
-    bar.appendChild(b);
-    const val = document.createElement('div'); val.className = 'v'; val.textContent = `${fmt(v, 4)} Pa/m`;
-    $('forces').append(lab, bar, val);
-  }
-  const note = document.createElement('div');
-  note.className = 'small'; note.style.gridColumn = '1/-1';
-  note.textContent = 'Bars to the right push fluid toward +x (down the incline); bars to the left push toward −x.';
-  $('forces').appendChild(note);
-}
-
 function stat(k, v, u) { return `<div class="stat"><div class="k">${k}</div><div class="v">${v} <span class="u">${u || ''}</span></div></div>`; }
 
 function renderStats(r) {
@@ -1462,7 +1426,6 @@ function render() {
   const parts = comp ? [['Couette (plates)', C.cou, 1], ['pressure', C.pres, 1], ['gravity', C.grav, 1]] : [];
   legend($('uLegend'), [['total u(y)', C.vel, 0], ...parts]);
   legend($('tLegend'), [['total τ(y)', C.tau, 0], ...parts]);
-  forceBars(r);
   renderStats(r);
   drawSchematic();
 }
@@ -1519,38 +1482,6 @@ $('dlPy').addEventListener('click', () => {
 $('srcView').textContent = PY_SRC;
 updateReproduce(readParams());
 
-// ---------------------------------------------------------------- derivation
-let lastDeriv = null;
-function renderDerivation(out) {
-  lastDeriv = out;
-  const el = $('deriv'); el.className = '';
-  if (!out.ok) { el.className = 'err'; el.textContent = 'Symbolic derivation failed: ' + out.error; return; }
-  const d = out.result;
-  const ol = document.createElement('ol'); ol.className = 'steps';
-  for (const s of d.steps) {
-    const li = document.createElement('li');
-    const t = document.createElement('div'); t.className = 't'; t.textContent = s.title;
-    const m = document.createElement('div'); m.className = 'eq'; tex(m, s.latex, true);
-    li.append(t, m);
-    if (s.note_latex) {
-      const n = document.createElement('div'); n.className = 'eq';
-      const sp = document.createElement('span'); tex(sp, s.note_latex, false);
-      n.append(document.createTextNode((s.note || '') + ' '), sp); li.appendChild(n);
-    }
-    ol.appendChild(li);
-  }
-  el.innerHTML = ''; el.appendChild(ol);
-  const ck = d.checks;
-  const lab = {ode_residual_zero: 'ODE residual μu″ + G = 0', bc_lower_satisfied: 'u(0) = U_b', bc_upper_satisfied: 'u(h) = U_t',
-    matches_superposed_form: 'matches superposed form', tau_matches: 'τ(y) matches', Q_matches: 'Q′ matches',
-    numeric_matches_solver: 'agrees with the numerical solver'};
-  const box = document.createElement('div'); box.className = 'checks';
-  box.innerHTML = '<strong style="font-size:13px">SymPy checks:</strong> ' + Object.keys(lab).map(k =>
-    `<span class="${ck[k] ? 'ok' : 'no'}">${ck[k] ? '✓' : '✗'} ${lab[k]}</span>`).join('');
-  el.appendChild(box);
-  const v = $('versions'); v.textContent += ` · SymPy ${d.sympy_version}`;
-}
-
 // ---------------------------------------------------------------- boot
 function loadScript(src) {
   return new Promise((res, rej) => {
@@ -1567,7 +1498,7 @@ async function boot() {
     py.FS.writeFile(`${dir}/${PY_FILE}`, PY_SRC);
     py.runPython(`import sys\nif ${JSON.stringify(dir)} not in sys.path: sys.path.insert(0, ${JSON.stringify(dir)})`);
     const mod = py.pyimport('parallel_plate_flow');
-    api = {web_solve: s => mod.web_solve(s), web_derive: () => mod.web_derive(), web_info: () => mod.web_info()};
+    api = {web_solve: s => mod.web_solve(s), web_info: () => mod.web_info()};
     const info = JSON.parse(api.web_info());
     FLUIDS = info.fluids;
     const sel = $('fluid'), cur = sel.value;
@@ -1575,21 +1506,13 @@ async function boot() {
     sel.value = FLUIDS[cur] ? cur : 'custom';
     $('versions').textContent = `parallel_plate_flow ${info.version} · Python ${info.python} · Pyodide ${PYODIDE_VERSION}`;
     ['schemCard', 'uCard', 'tCard'].forEach(id => $(id).classList.remove('busy'));
-    setStatus('Python ready. Loading SymPy for the derivation…', 'ready');
+    setStatus(`Python ${info.python} running in your browser (Pyodide ${PYODIDE_VERSION}).`, 'ready');
     compute();
-    try {
-      await py.loadPackage('sympy');
-      renderDerivation(JSON.parse(api.web_derive()));
-      setStatus(`Python ${info.python} running in your browser (Pyodide ${PYODIDE_VERSION}).`, 'ready');
-    } catch (e) {
-      renderDerivation({ok: false, error: String(e.message || e)});
-      setStatus('Python ready. SymPy could not be loaded, so the derivation is unavailable.', 'ready');
-    }
   } catch (e) {
     setStatus('Could not start Python: ' + (e.message || e) + '. Check your connection and reload.', 'error');
   }
 }
-window.addEventListener('load', () => { if (result) render(); if (lastDeriv) { $('versions').textContent = $('versions').textContent.replace(/ · SymPy .*/, ''); renderDerivation(lastDeriv); } });  // re-typeset once KaTeX arrives
+window.addEventListener('load', () => { if (result) render(); });  // re-typeset once KaTeX arrives
 boot();
 })();
 </script>
